@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <!-- 로그 파일 경로 설정 -->
+    <Properties>
+        <Property name="LOG_FILE_DIR">logs</Property>
+        <Property name="DEFAULT_PATTERN">[%d{yyyy-MM-dd HH:mm:ss.SSS}] %5p ${sys:PID} --- [%15.15t] %-40.40c{1.} : %m%n%xwEx</Property>
+        <Property name="COLOR_PATTERN">[%clr{%d{yyyy-MM-dd HH:mm:ss.SSS}}{faint}] %clr{%5p} %clr{${sys:PID}}{magenta} %clr{---}{faint} %clr{[%15.15t]}{faint} %clr{%-40.40c}{cyan} %clr{:}{faint} %m%n%xwEx</Property>
+        <Property name="TEST_PATTERN">%d %5p [%c] %m%n</Property>
+    </Properties>
+
+    <!-- Appenders 설정 -->
+    <Appenders>
+        <!-- 콘솔 출력 -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${COLOR_PATTERN}" />
+        </Console>
+
+        <!-- 파일 출력 (Rolling File) -->
+        <RollingFile name="File" fileName="${LOG_FILE_DIR}/api.log" filePattern="${LOG_FILE_DIR}/tech.%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${DEFAULT_PATTERN}" />
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="20MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="99999999" fileIndex="min"/>
+        </RollingFile>
+
+        <RollingFile name ="FileError" fileName="${LOG_FILE_DIR}/error.log" filePattern="${LOG_FILE_DIR}/tech_error.%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${DEFAULT_PATTERN}" />
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+                <SizeBasedTriggeringPolicy size="20MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="99999999" fileIndex="min"/>
+        </RollingFile>
+        <Async name="AsyncFileLog" >
+            <AppenderRef ref="File" />
+        </Async>
+        <Async name="AsyncErrorFileLog" >
+            <AppenderRef ref="FileError" />
+        </Async>
+    </Appenders>
+
+    <!-- Loggers 설정 -->
+    <Loggers>
+
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="AsyncFileLog" />
+        </Root>
+
+        <Logger name="ErrorLogger" level="ERROR" additivity="false">
+            <AppenderRef ref="AsyncErrorFileLog"/>
+        </Logger>
+
+        <logger name="org.springframework" additivity="true"/>
+        <Logger name="com.rsupport.tech_scheduler" level="INFO" />
+
+    </Loggers>
+</Configuration>

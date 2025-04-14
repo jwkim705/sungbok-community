@@ -10,11 +10,13 @@ services:
       - valkey_data:/valkey
     ports:
       - "6379:6379"
+    networks:
+      - valkey-network
     restart: always
 
   postgres:
     container_name: postgres
-    image: postgres:17.4
+    image: postgres:latest
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -49,6 +51,20 @@ services:
       - "9090:8080"
       - "50000:50000"
 
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: simple-redisinsight
+    ports:
+        - 5540:5540
+    networks:
+      - valkey-network
+    depends_on:
+      - valkey
+    restart: always
+
+networks:
+  valkey-network:
+    driver: bridge
 volumes:
   valkey_data:
   postgres_data:
