@@ -1,0 +1,16 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.sungbok'
+version = '3.20.3'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jooq:jooq-codegen:${jooqVersion}"
+    runtimeOnly 'org.postgresql:postgresql'
+}
+

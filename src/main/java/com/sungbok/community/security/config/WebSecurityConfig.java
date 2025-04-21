@@ -1,0 +1,120 @@
+package com.sungbok.community.security.config;
+
+import com.sungbok.community.config.CorsConfig;
+import com.sungbok.community.security.handler.*;
+import com.sungbok.community.security.provider.AuthProvider;
+import com.sungbok.community.security.provider.CustomAuthenticationProvider;
+import com.sungbok.community.security.service.impl.Oauth2UserDetailsServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
+
+import static org.springframework.security.config.Customizer.withDefaults;
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity(securedEnabled = true)
+@RequiredArgsConstructor
+public class WebSecurityConfig {
+
+    private final CorsConfig corsConfig;
+    private final AuthProvider authProvider;
+    private final CustomAuthenticationEntryPointHandler customAuthenticationEntryPointHandler;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final AuthenticationConfiguration authenticationConfiguration;
+    private final CustomAuthenticationProvider customAuthenticationProvider;
+    private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
+    private final CustomAuthenticationFailHandler customAuthenticationFailHandler;
+    private final Oauth2UserDetailsServiceImpl oauth2UserDetailsService;
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .cors(cors ->
+                        cors.configurationSource(corsConfig.corsConfigurationSource())
+                )
+                .headers(httpSecurityHeadersConfigurer -> httpSecurityHeadersConfigurer
+                        .xssProtection(xXssConfig ->
+                                xXssConfig.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                        // X-XSS-Protection: 1; mode=block;
+                        .contentTypeOptions(withDefaults()) // X-Content-Type-Options: nosniff
+                        .cacheControl(withDefaults()) // Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny) // X-Frame-Options: DENY
+                        .httpStrictTransportSecurity(HeadersConfigurer.HstsConfig::disable)
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .redirectionEndpoint(redirection -> redirection
+                                .baseUri("/login/oauth2/code/**"))
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(oauth2UserDetailsService))
+                        .successHandler(customAuthenticationSuccessHandler)
+                        .failureHandler(customAuthenticationFailHandler)
+                )
+                .formLogin(configurer ->
+                        configurer
+                                .usernameParameter("email")
+                                .passwordParameter("password")
+                                .loginProcessingUrl("/login")
+                                .successHandler(customAuthenticationSuccessHandler)
+                                .failureHandler(customAuthenticationFailHandler)
+                )
+                .logout(configurer ->
+                        configurer
+                                .logoutUrl("/logout")
+                                .logoutSuccessHandler(customLogoutSuccessHandler)
+                                .invalidateHttpSession(true)
+                )
+                .sessionManagement(configurer ->
+                        configurer
+                                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                )
+                .exceptionHandling(handler ->
+                        handler
+                                .authenticationEntryPoint(customAuthenticationEntryPointHandler)
+                                .accessDeniedHandler(customAccessDeniedHandler)
+                )
+                .sessionManagement(auth ->
+                        auth
+                                .maximumSessions(1)
+                                .maxSessionsPreventsLogin(true)
+                )
+                .sessionManagement(session ->
+                        session
+                                .sessionFixation()
+                                .newSession()
+                )
+                .build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return webSecurity ->
+                webSecurity
+                        .ignoring()
+                        .requestMatchers(authProvider.ignoreListDefaultEndpoints())
+                        .requestMatchers(authProvider.whiteListDefaultEndpoints());
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager() throws Exception {
+        ProviderManager providerManager = (ProviderManager) authenticationConfiguration.getAuthenticationManager();
+        providerManager.getProviders().add(this.customAuthenticationProvider);
+        return authenticationConfiguration.getAuthenticationManager();
+    }
+}

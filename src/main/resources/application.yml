@@ -1,0 +1,22 @@
+spring:
+  profiles:
+    active: local
+  application:
+    name: community
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+    username: ${POSTGRES_USER} # DB 사용자명
+    password: ${POSTGRES_PASSWORD} # DB 비밀번호
+    driver-class-name: org.postgresql.Driver
+    hikari: # HikariCP Connection Pool 설정 (기본값 사용 가능)
+      connection-timeout: 30000 # 연결 타임아웃 (ms)
+      maximum-pool-size: 10 # 최대 커넥션 풀 크기
+      idle-timeout: 600000 # 유휴 커넥션 타임아웃 (ms)
+      max-lifetime: 1800000 # 커넥션 최대 수명 (ms)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+logging:
+  config: classpath:log4j2.xml
