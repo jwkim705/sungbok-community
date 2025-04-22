@@ -22,7 +22,6 @@ CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255), -- Form login 용. OAuth 사용자는 null일 수 있음
-    name VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by INT,
     modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -49,6 +48,7 @@ CREATE TABLE members ( -- 교회 성도 정보
     gender VARCHAR(10), -- MALE, FEMALE
     address TEXT,
     phone_number VARCHAR(20) UNIQUE,
+    picture TEXT, -- Oauth 프로필
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by INT,
     modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

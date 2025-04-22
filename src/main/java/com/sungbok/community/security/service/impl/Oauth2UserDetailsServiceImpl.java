@@ -1,11 +1,16 @@
 package com.sungbok.community.security.service.impl;
 
+import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.security.model.OAuthAttributes;
 import com.sungbok.community.security.model.PrincipalDetails;
 import com.sungbok.community.security.model.SecurityUserItem;
 import jakarta.servlet.http.HttpSession;
+import java.util.Objects;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Configuration;
+import org.jooq.generated.tables.daos.UsersDao;
+import org.jooq.generated.tables.pojos.Users;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -17,17 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Slf4j
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class Oauth2UserDetailsServiceImpl implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
-  private final UsersDao usersDao;
+  private final UserRepository userRepository;
+  private final MemberRepository memberRepository;
   private final HttpSession httpSession;
 
-    public Oauth2UserDetailsServiceImpl(UsersDao usersDao, HttpSession httpSession, Configuration configuration) {
-        this.usersDao = new UsersDao(configuration);
-        this.httpSession = httpSession;
-    }
-
-    @Override
+  @Override
   @Transactional
   public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
     OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
@@ -47,11 +49,18 @@ public class Oauth2UserDetailsServiceImpl implements OAuth2UserService<OAuth2Use
   }
 
   private Users saveOrUpdate(OAuthAttributes attributes) {
-      Users user = usersDao.findById(attributes).findOneByEmail(attributes.getEmail())
-              .map(entity -> entity.update(attributes.getName(), attributes.getPicture()))
-              .orElse(attributes.toEntity(attributes.getPicture()));
+      //TODO 커스텀 save,update로 users,members 업데이트 필요
+      Users user = userRepository.findByEmail(attributes.getEmail());
+      if(Objects.nonNull(user)) {
+        userRepository.updateOauthLogin(attributes);
 
-      return usersDao.insert(user);
+      }
+//      Users user = usersDao.findById(attributes).findOneByEmail(attributes.getEmail())
+//              .map(entity -> entity.update(attributes.getName(), attributes.getPicture()))
+//              .orElse(attributes.toEntity(attributes.getPicture()));
+
+
+      return new Users();
   }
 
 }

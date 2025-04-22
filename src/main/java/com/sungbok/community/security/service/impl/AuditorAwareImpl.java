@@ -1,7 +1,7 @@
 package com.sungbok.community.security.service.impl;
 
-import com.rsupport.shuttlecock.security.model.PrincipalDetails;
-import com.rsupport.shuttlecock.security.model.SecurityUserItem;
+import com.sungbok.community.security.model.PrincipalDetails;
+import com.sungbok.community.security.model.SecurityUserItem;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.data.domain.AuditorAware;

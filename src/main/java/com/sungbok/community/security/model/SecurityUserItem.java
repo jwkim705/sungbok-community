@@ -7,6 +7,8 @@ import java.io.Serializable;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.jooq.generated.tables.pojos.Roles;
+import org.jooq.generated.tables.pojos.Users;
 
 @Getter
 @NoArgsConstructor
@@ -17,7 +19,7 @@ public class SecurityUserItem implements Serializable {
 
   private Long userId;
 
-  private UserRole role;
+  private Roles role;
 
   private String name;
 
@@ -26,15 +28,15 @@ public class SecurityUserItem implements Serializable {
   private String picture;
 
   @Builder
-  public SecurityUserItem(User user) {
+  public SecurityUserItem(Users user, Roles role, String picture) {
     this.userId = user.getId();
-    this.role = user.getRole();
+    this.role = role;
     this.name = user.getName();
     this.email = user.getEmail();
-    this.picture = user.getPicture();
+    this.picture = picture;
   }
 
-  public static SecurityUserItem of(User user) {
+  public static SecurityUserItem of(Users user) {
     return SecurityUserItem.builder().user(user).build();
   }
 }
