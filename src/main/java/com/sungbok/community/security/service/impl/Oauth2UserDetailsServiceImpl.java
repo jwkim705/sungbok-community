@@ -1,15 +1,15 @@
 package com.sungbok.community.security.service.impl;
 
-import com.sungbok.community.repository.UserRepository;
+import com.sungbok.community.dto.UpdateUserWithMember;
+import com.sungbok.community.dto.UserMemberDTO;
+import com.sungbok.community.repository.users.UserRepository;
 import com.sungbok.community.security.model.OAuthAttributes;
 import com.sungbok.community.security.model.PrincipalDetails;
 import com.sungbok.community.security.model.SecurityUserItem;
+import com.sungbok.community.service.UserService;
 import jakarta.servlet.http.HttpSession;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jooq.Configuration;
-import org.jooq.generated.tables.daos.UsersDao;
 import org.jooq.generated.tables.pojos.Users;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -19,14 +19,16 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+import java.util.Optional;
+
 @Service
 @Slf4j
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class Oauth2UserDetailsServiceImpl implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
-  private final UserRepository userRepository;
-  private final MemberRepository memberRepository;
+  private final UserService userService;
   private final HttpSession httpSession;
 
   @Override
@@ -50,10 +52,9 @@ public class Oauth2UserDetailsServiceImpl implements OAuth2UserService<OAuth2Use
 
   private Users saveOrUpdate(OAuthAttributes attributes) {
       //TODO 커스텀 save,update로 users,members 업데이트 필요
-      Users user = userRepository.findByEmail(attributes.getEmail());
+      UserMemberDTO user = userService.getUser(attributes.getEmail());
       if(Objects.nonNull(user)) {
-        userRepository.updateOauthLogin(attributes);
-
+        userService.saveOrUpdateUser(new UpdateUserWithMember());
       }
 //      Users user = usersDao.findById(attributes).findOneByEmail(attributes.getEmail())
 //              .map(entity -> entity.update(attributes.getName(), attributes.getPicture()))

@@ -4,6 +4,8 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+
+import com.sungbok.community.dto.UserMemberDTO;
 import lombok.Getter;
 import org.jooq.generated.tables.pojos.Users;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,18 +19,18 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
   @Serial
   private static final long serialVersionUID = 1954914298684455486L;
 
-  private final Users user;
+  private final UserMemberDTO user;
   private Map<String, Object> attributes;
   private final SecurityUserItem securityUserItem;
 
   //일반 로그인
-  public PrincipalDetails(Users user, SecurityUserItem securityUserItem) {
+  public PrincipalDetails(UserMemberDTO user, SecurityUserItem securityUserItem) {
     this.user = user;
     this.securityUserItem = securityUserItem;
   }
 
   //OAuth 로그인
-  public PrincipalDetails(Users user, Map<String, Object> attributes, SecurityUserItem securityUserItem) {
+  public PrincipalDetails(UserMemberDTO user, Map<String, Object> attributes, SecurityUserItem securityUserItem) {
     this.user = user;
     this.attributes = attributes;
     this.securityUserItem = securityUserItem;

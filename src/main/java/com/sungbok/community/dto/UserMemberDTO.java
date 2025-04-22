@@ -15,6 +15,8 @@ public class UserMemberDTO {
 
   private final String name;
 
+  private final String password;
+
   private final LocalDate birthdate;
 
   private final String gender;
@@ -32,12 +34,13 @@ public class UserMemberDTO {
     this.userId = user.getId();
     this.email = user.getEmail();
     this.name = member.getName();
+    this.password = user.getPassword();
     this.birthdate = member.getBirthdate();
     this.gender = member.getGender();
     this.address = member.getAddress();
     this.phoneNumber = member.getPhoneNumber();
     this.picture = member.getPicture();
-    this.registeredByUserId = member.getRegisteredByUserId();
+    this.registeredByUserId = getRegisteredByUserId();
   }
 
   public static UserMemberDTO of(Users user, Members member) {

@@ -1,7 +1,6 @@
 package com.sungbok.community.security.service.impl;
 
-import com.sungbok.community.repository.MemberRepository;
-import com.sungbok.community.repository.UserRepository;
+import com.sungbok.community.repository.users.UserRepository;
 import com.sungbok.community.security.model.PrincipalDetails;
 import com.sungbok.community.security.model.SecurityUserItem;
 import jakarta.servlet.http.HttpSession;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Service;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
   private final UserRepository userRepository;
-  private final MemberRepository memberRepository;
   private final HttpSession httpSession;
 
   @Override

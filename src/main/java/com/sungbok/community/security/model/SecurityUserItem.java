@@ -1,14 +1,13 @@
 package com.sungbok.community.security.model;
 
-import com.rsupport.shuttlecock.entity.User;
-import com.rsupport.shuttlecock.enums.UserRole;
-import java.io.Serial;
-import java.io.Serializable;
+import com.sungbok.community.dto.UserMemberDTO;
+import com.sungbok.community.enums.UserRole;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.jooq.generated.tables.pojos.Roles;
-import org.jooq.generated.tables.pojos.Users;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 @Getter
 @NoArgsConstructor
@@ -19,7 +18,7 @@ public class SecurityUserItem implements Serializable {
 
   private Long userId;
 
-  private Roles role;
+  private UserRole role;
 
   private String name;
 
@@ -28,15 +27,15 @@ public class SecurityUserItem implements Serializable {
   private String picture;
 
   @Builder
-  public SecurityUserItem(Users user, Roles role, String picture) {
-    this.userId = user.getId();
-    this.role = role;
+  public SecurityUserItem(UserMemberDTO user, UserRole role, String picture) {
+    this.userId = user.getUserId();
     this.name = user.getName();
+    this.role = role;
     this.email = user.getEmail();
     this.picture = picture;
   }
 
-  public static SecurityUserItem of(Users user) {
-    return SecurityUserItem.builder().user(user).build();
+  public static SecurityUserItem of(UserMemberDTO user,  UserRole role, String picture) {
+    return SecurityUserItem.builder().user(user).role(role).picture(picture).build();
   }
 }

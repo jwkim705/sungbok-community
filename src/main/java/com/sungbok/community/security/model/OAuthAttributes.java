@@ -1,10 +1,9 @@
 package com.sungbok.community.security.model;
 
-import java.util.Map;
 import lombok.Builder;
 import lombok.Getter;
-import org.jooq.generated.tables.pojos.Users;
-import org.jooq.generated.tables.records.UsersRecord;
+
+import java.util.Map;
 
 @Getter
 public class OAuthAttributes {
