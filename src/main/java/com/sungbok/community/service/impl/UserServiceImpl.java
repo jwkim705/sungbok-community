@@ -1,63 +1,100 @@
 package com.sungbok.community.service.impl;
 
-import com.sungbok.community.dto.UpdateMember;
-import com.sungbok.community.dto.UpdateUser;
 import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.repository.member.MembersRepository;
 import com.sungbok.community.repository.users.UserRepository;
 import com.sungbok.community.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.jooq.generated.tables.pojos.Members;
 import org.jooq.generated.tables.pojos.Users;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
-
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final MembersRepository membersRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional(readOnly = true)
     public UserMemberDTO getUser(Long userId) {
-
-        return null;
+        return userRepository.findUserWithMemberById(userId)
+                .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + userId));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserMemberDTO getUser(String email) {
-        return null;
+        Users user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+
+        // Use the JOIN method from UserRepository to get the DTO
+        return userRepository.findUserWithMemberById(user.getId())
+             .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + user.getId() + " after finding user by email."));
     }
 
     @Override
+    @Transactional
     public UserMemberDTO saveOrUpdateUser(UpdateUserWithMember updateReq) {
+        Long userId = updateReq.getUserId();
+        Long finalUserId; // To store the ID for final fetch
 
-        Optional<Users> user = userRepository.findById(updateReq.getUserId());
-        if (user.isPresent()) {
-            UpdateUser updateUser = UpdateUser.builder()
-                    .id(user.get().getId())
-                    .email(updateReq.getEmail())
-                    .password(updateReq.getPassword())
-                    .build();
-            int result = userRepository.updateOauthLogin(updateUser);
-            if (result > 0) {
+        if (userId != null && userId > 0) {
+            finalUserId = userId;
 
-                Optional<Members> member = membersRepository.findByUserId(user.get().getId());
-                if (member.isPresent()) {
-                    UpdateMember updateMember = UpdateMember.builder()
-                            .id(member.get().getId())
-                            .picture(updateReq.getPicture())
-                            .build();
-                }
+            Users existingUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found for update with ID: " + userId));
+
+            if (updateReq.getEmail() != null) {
+                existingUser.setEmail(updateReq.getEmail());
+            }
+            if (StringUtils.isNotBlank(updateReq.getPassword())) {
+                existingUser.setPassword(passwordEncoder.encode(updateReq.getPassword()));
+            }
+            userRepository.updateUsingStore(existingUser);
+
+            Members existingMember = membersRepository.findByUserId(userId)
+                 .orElseThrow(() -> new RuntimeException("Member not found for user ID: " + userId)); // Or handle if member might not exist
+
+            if (updateReq.getName() != null) {
+                existingMember.setName(updateReq.getName());
+            }
+            if (updateReq.getPicture() != null) {
+                existingMember.setPicture(updateReq.getPicture());
+            }
+            membersRepository.updateUsingStore(existingMember);
+
+        } else {
+            if (updateReq.getEmail() == null) {
+                 throw new IllegalArgumentException("Email is required for new users.");
             }
 
+            Users newUser = new Users();
+            newUser.setEmail(updateReq.getEmail());
+
+            if (StringUtils.isNotBlank(updateReq.getPassword())) {
+                newUser.setPassword(passwordEncoder.encode(updateReq.getPassword()));
+            } else {
+                newUser.setPassword(null);
+            }
+
+            Users savedUser = userRepository.save(newUser);
+            finalUserId = savedUser.getId();
+
+            Members newMember = new Members();
+            newMember.setUserId(finalUserId);
+            newMember.setName(updateReq.getName());
+            newMember.setPicture(updateReq.getPicture());
+            membersRepository.save(newMember);
         }
 
-        return null;
+        return userRepository.findUserWithMemberById(finalUserId)
+             .orElseThrow(() -> new RuntimeException("Failed to fetch final user/member state after save/update for ID: " + finalUserId));
     }
 }

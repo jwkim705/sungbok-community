@@ -15,12 +15,15 @@ public class UpdateMember {
 
     private String picture;
 
+    private String name;
+
     private UserRole role;
 
     @Builder
-    public UpdateMember(Long id, String picture, UserRole role) {
+    public UpdateMember(Long id, String picture, String name, UserRole role) {
         this.id = id;
         this.picture = picture;
+        this.name = name;
         this.role = role;
     }
 
