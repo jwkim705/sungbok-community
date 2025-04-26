@@ -1,7 +1,8 @@
 package com.sungbok.community.common.dto;
 
-import com.rsupport.shuttlecock.common.vo.AbstractObject;
 import java.io.Serial;
+
+import com.sungbok.community.common.vo.AbstractObject;
 import lombok.Getter;
 
 @Getter

@@ -1,6 +1,6 @@
 package com.sungbok.community.common.dto;
 
-import com.rsupport.shuttlecock.common.vo.PageVO;
+import com.sungbok.community.common.vo.PageVO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serial;
 import java.io.Serializable;

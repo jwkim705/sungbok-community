@@ -1,6 +1,6 @@
 package com.sungbok.community.common.exception.handler;
 
-import com.rsupport.shuttlecock.common.dto.ErrorResponseDTO;
+import com.sungbok.community.common.dto.ErrorResponseDTO;
 import com.sungbok.community.common.exception.AlreadyExistException;
 import com.sungbok.community.common.exception.DataNotFoundException;
 import com.sungbok.community.common.exception.NotFoundException;

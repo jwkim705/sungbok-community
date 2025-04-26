@@ -38,7 +38,7 @@ public class WebSecurityConfig {
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
     private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
     private final CustomAuthenticationFailHandler customAuthenticationFailHandler;
-    private final Oauth2UserDetailsServiceImpl oauth2UserDetailsService;
+//    private final Oauth2UserDetailsServiceImpl oauth2UserDetailsService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -58,14 +58,14 @@ public class WebSecurityConfig {
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny) // X-Frame-Options: DENY
                         .httpStrictTransportSecurity(HeadersConfigurer.HstsConfig::disable)
                 )
-                .oauth2Login(oauth2 -> oauth2
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/login/oauth2/code/**"))
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(oauth2UserDetailsService))
-                        .successHandler(customAuthenticationSuccessHandler)
-                        .failureHandler(customAuthenticationFailHandler)
-                )
+//                .oauth2Login(oauth2 -> oauth2
+//                        .redirectionEndpoint(redirection -> redirection
+//                                .baseUri("/login/oauth2/code/**"))
+//                        .userInfoEndpoint(userInfo -> userInfo
+//                                .userService(oauth2UserDetailsService))
+//                        .successHandler(customAuthenticationSuccessHandler)
+//                        .failureHandler(customAuthenticationFailHandler)
+//                )
                 .formLogin(configurer ->
                         configurer
                                 .usernameParameter("email")

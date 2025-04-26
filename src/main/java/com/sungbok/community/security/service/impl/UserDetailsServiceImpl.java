@@ -1,11 +1,10 @@
 package com.sungbok.community.security.service.impl;
 
+import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.repository.users.UserRepository;
 import com.sungbok.community.security.model.PrincipalDetails;
-import com.sungbok.community.security.model.SecurityUserItem;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.jooq.generated.tables.pojos.Users;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,8 +20,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-    Users user = userRepository.findByEmail(username);
+    UserMemberDTO user = userRepository.findUserWithMemberByEmail(username).orElseThrow(() -> new UsernameNotFoundException("<UNK>"));
     httpSession.setAttribute("user", user);
-    return new PrincipalDetails(user, SecurityUserItem.of(user));
+    return new PrincipalDetails(user);
   }
 }

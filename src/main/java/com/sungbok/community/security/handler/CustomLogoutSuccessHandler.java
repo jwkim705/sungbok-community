@@ -25,16 +25,16 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
 
   @Override
   public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
-      throws IOException, ServletException {
+      throws IOException {
     if (authentication != null && authentication.getDetails() != null) {
 
       PrincipalDetails user =  (PrincipalDetails) authentication.getPrincipal();
-      log.info("Success logout User: {}", defaultJacksonConverter.getObjectMapper().writeValueAsString(user.getSecurityUserItem()));
+      log.info("Success logout User: {}", defaultJacksonConverter.getObjectMapper().writeValueAsString(user.getUser()));
 
       request.getSession().invalidate();
       SecurityContextHolder.clearContext();
 
-      OkResponseDTO responseDTO = OkResponseDTO.of(HttpStatus.OK.value(), HttpStatus.OK.name(), user.getSecurityUserItem());
+      OkResponseDTO responseDTO = OkResponseDTO.of(HttpStatus.OK.value(), HttpStatus.OK.name(), user.getUser());
       response.setCharacterEncoding("UTF-8");
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 

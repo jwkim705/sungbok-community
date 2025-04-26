@@ -39,19 +39,19 @@ CREATE TABLE oauth_accounts (
 );
 
 CREATE TABLE members ( -- 교회 성도 정보
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGSERIAL REFERENCES users(id) UNIQUE, -- 앱 사용자와 연결 (nullable)
-    name VARCHAR(100) NOT NULL,
-    birthdate DATE,
-    gender VARCHAR(10), -- MALE, FEMALE
-    address TEXT,
-    phone_number VARCHAR(20) UNIQUE,
-    picture TEXT, -- Oauth 프로필
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGSERIAL,
-    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_by BIGSERIAL,
-    registered_by_user_id BIGSERIAL REFERENCES users(id) -- 등록한 관리자/리더 ID
+     id BIGSERIAL PRIMARY KEY,
+     user_id BIGSERIAL REFERENCES users(id) UNIQUE, -- 앱 사용자와 연결 (nullable)
+     name VARCHAR(100) NOT NULL,
+     birthdate DATE,
+     gender VARCHAR(10), -- MALE, FEMALE
+     address TEXT,
+     phone_number VARCHAR(20) UNIQUE,
+     picture TEXT, -- Oauth 프로필
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     created_by BIGSERIAL,
+     modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     modified_by BIGSERIAL,
+     registered_by_user_id BIGSERIAL REFERENCES users(id) -- 등록한 관리자/리더 ID
     -- 기타 필요한 정보 (세례명, 직분 등)
 );
 
@@ -68,15 +68,15 @@ CREATE TABLE member_departments (
 );
 
 CREATE TABLE user_department_roles ( -- 사용자의 부서 내 역할
-    user_id BIGSERIAL NOT NULL REFERENCES users(id),
-    department_id BIGSERIAL NOT NULL REFERENCES departments(id),
-    role_id BIGSERIAL NOT NULL REFERENCES roles(id),
-    assignment_date DATE DEFAULT CURRENT_DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by INT,
-    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_by INT,
-    PRIMARY KEY (user_id, department_id, role_id)
+   user_id BIGSERIAL NOT NULL REFERENCES users(id),
+   department_id BIGSERIAL NOT NULL REFERENCES departments(id),
+   role_id BIGSERIAL NOT NULL REFERENCES roles(id),
+   assignment_date DATE DEFAULT CURRENT_DATE,
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   created_by BIGSERIAL,
+   modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   modified_by BIGSERIAL,
+   PRIMARY KEY (user_id, department_id, role_id)
 );
 
 CREATE TABLE attendance (

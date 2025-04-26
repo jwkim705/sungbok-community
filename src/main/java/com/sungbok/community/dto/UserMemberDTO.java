@@ -1,6 +1,8 @@
 package com.sungbok.community.dto;
 
 import java.time.LocalDate;
+
+import com.sungbok.community.enums.UserRole;
 import lombok.Builder;
 import lombok.Getter;
 import org.jooq.generated.tables.pojos.Members;
@@ -27,10 +29,12 @@ public class UserMemberDTO {
 
   private final String picture;
 
+  private final String role;
+
   private final Integer registeredByUserId;
 
   @Builder
-  public UserMemberDTO(Users user, Members member) {
+  public UserMemberDTO(Users user, Members member, String role) {
     this.userId = user.getId();
     this.email = user.getEmail();
     this.name = member.getName();
@@ -40,6 +44,7 @@ public class UserMemberDTO {
     this.address = member.getAddress();
     this.phoneNumber = member.getPhoneNumber();
     this.picture = member.getPicture();
+    this.role = role;
     this.registeredByUserId = getRegisteredByUserId();
   }
 

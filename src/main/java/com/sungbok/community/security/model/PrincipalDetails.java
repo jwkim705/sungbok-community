@@ -21,26 +21,23 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
 
   private final UserMemberDTO user;
   private Map<String, Object> attributes;
-  private final SecurityUserItem securityUserItem;
 
   //일반 로그인
-  public PrincipalDetails(UserMemberDTO user, SecurityUserItem securityUserItem) {
+  public PrincipalDetails(UserMemberDTO user) {
     this.user = user;
-    this.securityUserItem = securityUserItem;
   }
 
   //OAuth 로그인
-  public PrincipalDetails(UserMemberDTO user, Map<String, Object> attributes, SecurityUserItem securityUserItem) {
+  public PrincipalDetails(UserMemberDTO user, Map<String, Object> attributes) {
     this.user = user;
     this.attributes = attributes;
-    this.securityUserItem = securityUserItem;
   }
 
   //권한을 리턴
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
     Collection<GrantedAuthority> authorities = new ArrayList<>();
-    authorities.add(new SimpleGrantedAuthority(securityUserItem.getRole().getRoleName()));
+    authorities.add(new SimpleGrantedAuthority(user.getRole()));
     return authorities;
   }
 

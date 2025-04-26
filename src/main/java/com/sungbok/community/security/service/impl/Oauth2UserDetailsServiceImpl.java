@@ -2,10 +2,8 @@ package com.sungbok.community.security.service.impl;
 
 import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.repository.users.UserRepository;
 import com.sungbok.community.security.model.OAuthAttributes;
 import com.sungbok.community.security.model.PrincipalDetails;
-import com.sungbok.community.security.model.SecurityUserItem;
 import com.sungbok.community.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -42,26 +39,24 @@ public class Oauth2UserDetailsServiceImpl implements OAuth2UserService<OAuth2Use
 
     OAuthAttributes attributes = OAuthAttributes.of(registrationId, userNameAttributeName, oAuth2User.getAttributes());
 
-    Users user = saveOrUpdate(attributes);
+    UserMemberDTO user = saveOrUpdate(attributes);
 
-    PrincipalDetails details = new PrincipalDetails(user,attributes.getAttributes(), SecurityUserItem.of(user));
+    PrincipalDetails details = new PrincipalDetails(user,attributes.getAttributes());
     httpSession.setAttribute("user", details);
 
     return details;
   }
 
-  private Users saveOrUpdate(OAuthAttributes attributes) {
-      //TODO 커스텀 save,update로 users,members 업데이트 필요
+  private UserMemberDTO saveOrUpdate(OAuthAttributes attributes) {
       UserMemberDTO user = userService.getUser(attributes.getEmail());
-      if(Objects.nonNull(user)) {
-        userService.saveOrUpdateUser(new UpdateUserWithMember());
-      }
-//      Users user = usersDao.findById(attributes).findOneByEmail(attributes.getEmail())
-//              .map(entity -> entity.update(attributes.getName(), attributes.getPicture()))
-//              .orElse(attributes.toEntity(attributes.getPicture()));
 
+      UpdateUserWithMember updateUserWithMember = new UpdateUserWithMember();
+      updateUserWithMember.setUserId(user.getUserId());
+      updateUserWithMember.setEmail(attributes.getEmail());
+      updateUserWithMember.setName(attributes.getName());
+      updateUserWithMember.setPicture(attributes.getPicture());
 
-      return new Users();
+      return userService.saveOrUpdateUser(updateUserWithMember);
   }
 
 }

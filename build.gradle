@@ -8,9 +8,9 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.4.4'
+    id 'org.springframework.boot' version '3.4.5'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'dev.monosoul.jooq-docker' version '7.0.6'
+    id 'dev.monosoul.jooq-docker' version '7.0.8'
 }
 
 group = 'com.sungbok'
@@ -29,10 +29,10 @@ configurations {
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-	all*.exclude module: 'spring-boot-starter-logging'
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+    all*.exclude module: 'spring-boot-starter-logging'
 }
 
 repositories {
@@ -53,15 +53,17 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-log4j2'
 
     // 데이터베이스 & jOOQ
+    implementation "org.jooq:jooq:$jooqVersion"
+    runtimeOnly "org.postgresql:postgresql"
     jooqCodegen project(':jooq-custom')
     jooqCodegen "org.jooq:jooq:${jooqVersion}"
     jooqCodegen "org.jooq:jooq-meta:${jooqVersion}"
     jooqCodegen "org.jooq:jooq-codegen:${jooqVersion}"
-    jooqCodegen("org.postgresql:postgresql")
+    jooqCodegen "org.postgresql:postgresql"
 
     //flyway
-    jooqCodegen 'org.flywaydb:flyway-core:11.7.2'
-    jooqCodegen 'org.flywaydb:flyway-database-postgresql:11.7.2'
+    jooqCodegen 'org.flywaydb:flyway-core:11.8.0'
+    jooqCodegen 'org.flywaydb:flyway-database-postgresql:11.8.0'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok'

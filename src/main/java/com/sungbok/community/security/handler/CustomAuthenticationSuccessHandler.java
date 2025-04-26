@@ -38,8 +38,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
 
     PrincipalDetails user =  (PrincipalDetails) authentication.getPrincipal();
 
-    log.info("SuccessHandler loginUser: {}", defaultJacksonConverter.getObjectMapper().writeValueAsString(user.getSecurityUserItem()));
-    System.out.println("SuccessHandler loginUser = " + defaultJacksonConverter.getObjectMapper().writeValueAsString(user.getSecurityUserItem()));
+    log.info("SuccessHandler loginUser: {}", defaultJacksonConverter.getObjectMapper().writeValueAsString(user.getUser()));
     httpSession.setAttribute("user", user);
     UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
     result.setDetails(user);
@@ -50,7 +49,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         UriComponentsBuilder.fromUriString(frontUrl+"/login")
             .queryParam("code", HttpStatus.OK.value())
             .queryParam("message", HttpStatus.OK.name())
-            .queryParam("data", defaultJacksonConverter.getObjectMapper().writeValueAsString(user.getSecurityUserItem()))
+            .queryParam("data", defaultJacksonConverter.getObjectMapper().writeValueAsString(user.getUser()))
             .build()
             .encode(StandardCharsets.UTF_8)
             .toUriString()

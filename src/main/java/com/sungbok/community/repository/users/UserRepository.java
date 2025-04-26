@@ -78,4 +78,21 @@ public class UserRepository {
 
       return Optional.of(UserMemberDTO.of(finalUser, finalMember));
   }
+
+    public Optional<UserMemberDTO> findUserWithMemberByEmail(String email) {
+        Optional<Record> result = dsl.select(USERS.asterisk(), MEMBERS.asterisk())
+                .from(USERS)
+                .join(MEMBERS).on(USERS.ID.eq(MEMBERS.USER_ID))
+                .where(USERS.EMAIL.eq(email))
+                .fetchOptional(); // fetchOptional() 사용 고려 가능
+
+        if (result.isEmpty()) {
+            return Optional.empty(); // 결과가 없으면 빈 Optional 반환
+        }
+
+        Users finalUser = result.get().into(Users.class);
+        Members finalMember = result.get().into(Members.class);
+
+        return Optional.of(UserMemberDTO.of(finalUser, finalMember));
+    }
 }
