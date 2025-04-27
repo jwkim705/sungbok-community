@@ -1,7 +1,6 @@
 package com.sungbok.community.repository.users;
 
 import com.sungbok.community.dto.UserMemberDTO;
-import java.util.Optional;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -10,7 +9,8 @@ import org.jooq.generated.tables.pojos.Members;
 import org.jooq.generated.tables.pojos.Users;
 import org.jooq.generated.tables.records.UsersRecord;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 import static org.jooq.generated.Tables.MEMBERS;
 import static org.jooq.generated.Tables.USERS;

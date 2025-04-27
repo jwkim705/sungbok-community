@@ -40,13 +40,14 @@ CREATE TABLE oauth_accounts (
 
 CREATE TABLE members ( -- 교회 성도 정보
      id BIGSERIAL PRIMARY KEY,
-     user_id BIGSERIAL REFERENCES users(id) UNIQUE, -- 앱 사용자와 연결 (nullable)
-     name VARCHAR(100) NOT NULL,
+     user_id BIGSERIAL NOT NULL REFERENCES users(id) UNIQUE,
+     name VARCHAR(50) NOT NULL,
      birthdate DATE,
      gender VARCHAR(10), -- MALE, FEMALE
      address TEXT,
      phone_number VARCHAR(20) UNIQUE,
      picture TEXT, -- Oauth 프로필
+     nickname VARCHAR(50),
      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
      created_by BIGSERIAL,
      modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
