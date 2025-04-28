@@ -1,4 +1,4 @@
-package com.sungbok.community.service.impl;
+package com.sungbok.community.service.change.impl;
 
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.AddUserResponseDTO;
@@ -6,50 +6,34 @@ import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.repository.member.MembersRepository;
 import com.sungbok.community.repository.users.UserRepository;
-import com.sungbok.community.service.UserService;
+import com.sungbok.community.service.change.ChangeUserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.generated.tables.pojos.Members;
 import org.jooq.generated.tables.pojos.Users;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+@Transactional
+public class ChangeUserServiceImpl implements ChangeUserService {
 
     private final UserRepository userRepository;
     private final MembersRepository membersRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional(readOnly = true)
-    public UserMemberDTO getUser(Long userId) {
-        return userRepository.findUserWithMemberById(userId)
-                .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + userId));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public UserMemberDTO getUser(String email) {
-        Users user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-
-        // Use the JOIN method from UserRepository to get the DTO
-        return userRepository.findUserWithMemberById(user.getId())
-             .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + user.getId() + " after finding user by email."));
-    }
-
-    @Override
     public AddUserResponseDTO signup(AddUserRequestDTO dto) {
+
+
+
         return null;
     }
 
 
     @Override
-    @Transactional
     public UserMemberDTO saveOrUpdateUser(UpdateUserWithMember updateReq) {
         Long userId = updateReq.getUserId();
         Long finalUserId; // To store the ID for final fetch

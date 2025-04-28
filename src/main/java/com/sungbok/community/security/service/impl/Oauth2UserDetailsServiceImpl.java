@@ -4,11 +4,11 @@ import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.security.model.OAuthAttributes;
 import com.sungbok.community.security.model.PrincipalDetails;
-import com.sungbok.community.service.UserService;
+import com.sungbok.community.service.change.ChangeUserService;
+import com.sungbok.community.service.get.GetUserService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jooq.generated.tables.pojos.Users;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -17,15 +17,14 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
-
 @Service
 @Slf4j
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class Oauth2UserDetailsServiceImpl implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
-  private final UserService userService;
+  private final GetUserService getUserService;
+  private final ChangeUserService changeUserService;
   private final HttpSession httpSession;
 
   @Override
@@ -48,7 +47,7 @@ public class Oauth2UserDetailsServiceImpl implements OAuth2UserService<OAuth2Use
   }
 
   private UserMemberDTO saveOrUpdate(OAuthAttributes attributes) {
-      UserMemberDTO user = userService.getUser(attributes.getEmail());
+      UserMemberDTO user = getUserService.getUser(attributes.getEmail());
 
       UpdateUserWithMember updateUserWithMember = new UpdateUserWithMember();
       updateUserWithMember.setUserId(user.getUserId());
@@ -56,7 +55,7 @@ public class Oauth2UserDetailsServiceImpl implements OAuth2UserService<OAuth2Use
       updateUserWithMember.setName(attributes.getName());
       updateUserWithMember.setPicture(attributes.getPicture());
 
-      return userService.saveOrUpdateUser(updateUserWithMember);
+      return changeUserService.saveOrUpdateUser(updateUserWithMember);
   }
 
 }

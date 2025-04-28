@@ -1,15 +1,11 @@
-package com.sungbok.community.service;
+package com.sungbok.community.service.change;
 
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.AddUserResponseDTO;
 import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
 
-public interface UserService {
-
-    UserMemberDTO getUser(Long userId);
-
-    UserMemberDTO getUser(String email);
+public interface ChangeUserService {
 
     AddUserResponseDTO signup(AddUserRequestDTO dto);
 

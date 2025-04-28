@@ -3,17 +3,23 @@ package com.sungbok.community.repository.users;
 import com.sungbok.community.dto.UserMemberDTO;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.generated.tables.daos.UsersDao;
-import org.jooq.generated.tables.pojos.Members;
-import org.jooq.generated.tables.pojos.Users;
+import org.jooq.generated.tables.pojos.*;
 import org.jooq.generated.tables.records.UsersRecord;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.jooq.generated.Tables.MEMBERS;
 import static org.jooq.generated.Tables.USERS;
+import static org.jooq.generated.Tables.ROLES;
+import static org.jooq.generated.Tables.DEPARTMENTS;
+import static org.jooq.generated.Tables.USER_DEPARTMENT_ROLES;
+import static org.jooq.impl.DSL.multiset;
+import static org.jooq.impl.DSL.select;
 
 @Repository
 public class UserRepository {
@@ -62,21 +68,57 @@ public class UserRepository {
    * @param userId 조회할 사용자의 ID
    * @return UserMemberDTO가 포함된 Optional 객체. 사용자가 없거나 멤버 정보가 없으면 비어 있을 수 있음.
    */
-  public Optional<UserMemberDTO> findUserWithMemberById(Long userId) {
-      Record result = dsl.select(USERS.asterisk(), MEMBERS.asterisk())
-          .from(USERS)
-          .join(MEMBERS).on(USERS.ID.eq(MEMBERS.USER_ID))
-          .where(USERS.ID.eq(userId))
-          .fetchOne(); // fetchOptional() 사용 고려 가능
+  public Optional<UserMemberDTO> findUserWithDetailsById(Long userId) {
 
-      if (result == null) {
-          return Optional.empty(); // 결과가 없으면 빈 Optional 반환
-      }
+      Field<List<UserMemberDTO.DepartmentRoleInfo>> departmentRolesMultiset =
+              multiset(
+                      select(
+                              DEPARTMENTS.ID.as("departmentId"),
+                              DEPARTMENTS.NAME.as("departmentName"),
+                              ROLES.ID.as("roleId"),
+                              ROLES.NAME.as("roleName"),
+                              USER_DEPARTMENT_ROLES.ASSIGNMENT_DATE
+                      )
+                              .from(USER_DEPARTMENT_ROLES)
+                              .join(DEPARTMENTS).on(USER_DEPARTMENT_ROLES.DEPARTMENT_ID.eq(DEPARTMENTS.ID))
+                              .join(ROLES).on(USER_DEPARTMENT_ROLES.ROLE_ID.eq(ROLES.ID))
+                              .where(USER_DEPARTMENT_ROLES.USER_ID.eq(USERS.ID))
+              )
+                      .as("departmentRoles")
+                      .convertFrom(r -> r.map(Records.mapping(UserMemberDTO.DepartmentRoleInfo::new)));
 
-      Users finalUser = result.into(Users.class);
-      Members finalMember = result.into(Members.class);
 
-      return Optional.of(UserMemberDTO.of(finalUser, finalMember));
+      return dsl.select(
+                      USERS.ID,
+                      USERS.EMAIL,
+                      MEMBERS.NAME,
+                      MEMBERS.BIRTHDATE,
+                      MEMBERS.GENDER,
+                      MEMBERS.ADDRESS,
+                      MEMBERS.PHONE_NUMBER,
+                      MEMBERS.NICKNAME,
+                      departmentRolesMultiset
+              )
+              .from(USERS)
+              .leftJoin(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
+              .where(USERS.ID.eq(userId))
+              .fetchOptional()
+              .map(record -> {
+                  List<UserMemberDTO.DepartmentRoleInfo> roles =
+                          record.get("departmentRoles", List.class);
+
+                  return new UserMemberDTO(
+                          record.get(USERS.ID),
+                          record.get(USERS.EMAIL),
+                          record.get(MEMBERS.NAME),
+                          record.get(MEMBERS.BIRTHDATE),
+                          record.get(MEMBERS.GENDER),
+                          record.get(MEMBERS.ADDRESS),
+                          record.get(MEMBERS.PHONE_NUMBER),
+                          record.get(MEMBERS.NICKNAME),
+                          roles
+                  );
+              });
   }
 
     public Optional<UserMemberDTO> findUserWithMemberByEmail(String email) {
