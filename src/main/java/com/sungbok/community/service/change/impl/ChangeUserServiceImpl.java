@@ -89,7 +89,7 @@ public class ChangeUserServiceImpl implements ChangeUserService {
             membersRepository.save(newMember);
         }
 
-        return userRepository.findUserWithMemberById(finalUserId)
+        return userRepository.findUserWithDetailsById(finalUserId)
              .orElseThrow(() -> new RuntimeException("Failed to fetch final user/member state after save/update for ID: " + finalUserId));
     }
 }

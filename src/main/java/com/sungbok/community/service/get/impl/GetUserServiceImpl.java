@@ -19,7 +19,7 @@ public class GetUserServiceImpl implements GetUserService {
 
     @Override
     public UserMemberDTO getUser(Long userId) {
-        return userRepository.findUserWithMemberById(userId)
+        return userRepository.findUserWithDetailsById(userId)
                 .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + userId));
     }
 
@@ -29,7 +29,7 @@ public class GetUserServiceImpl implements GetUserService {
             .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
         // Use the JOIN method from UserRepository to get the DTO
-        return userRepository.findUserWithMemberById(user.getId())
+        return userRepository.findUserWithDetailsById(user.getId())
              .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + user.getId() + " after finding user by email."));
     }
 

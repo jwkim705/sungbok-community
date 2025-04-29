@@ -1,12 +1,12 @@
 package com.sungbok.community.dto;
 
-import java.time.LocalDate;
-import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Value;
 import org.jooq.generated.tables.pojos.Members;
 import org.jooq.generated.tables.pojos.Users;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 public class UserMemberDTO {
@@ -16,6 +16,8 @@ public class UserMemberDTO {
   private final String email;
 
   private final String name;
+
+  private final String password;
 
   private final LocalDate birthdate;
 
@@ -33,19 +35,11 @@ public class UserMemberDTO {
 
   private final List<DepartmentRoleInfo> departmentRoles; // Changed back to List
 
-  @Value
-  public static class DepartmentRoleInfo {
-      Long departmentId;
-      String departmentName;
-      Long roleId;
-      String roleName;
-      LocalDate assignmentDate;
-  }
-
   @Builder
   public UserMemberDTO(Users user, Members member, String role, List<DepartmentRoleInfo> departmentRoles) {
     this.userId = user.getId();
     this.email = user.getEmail();
+    this.password = user.getPassword();
     this.name = member.getName();
     this.birthdate = member.getBirthdate();
     this.gender = member.getGender();
