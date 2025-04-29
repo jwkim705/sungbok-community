@@ -63,38 +63,61 @@ public class UserRepository {
        usersRecord.store();
   }
 
-  public Optional<UserMemberDTO> findUserWithDetailsById(Long userId) {
+    public Optional<UserMemberDTO> findUserWithDetailsById(Long userId) {
 
-      Field<List<DepartmentRoleInfo>> departmentRolesMultiset =
-              multiset(
-                      select(
-                              DEPARTMENTS.ID.as("departmentId"),
-                              DEPARTMENTS.NAME.as("departmentName"),
-                              ROLES.ID.as("roleId"),
-                              ROLES.NAME.as("roleName"),
-                              USER_DEPARTMENT_ROLES.ASSIGNMENT_DATE
-                      )
-                              .from(USER_DEPARTMENT_ROLES)
-                              .join(DEPARTMENTS).on(USER_DEPARTMENT_ROLES.DEPARTMENT_ID.eq(DEPARTMENTS.ID))
-                              .join(ROLES).on(USER_DEPARTMENT_ROLES.ROLE_ID.eq(ROLES.ID))
-                              .where(USER_DEPARTMENT_ROLES.USER_ID.eq(userId))
-              )
-                      .as("departmentRoles")
-                      .convertFrom(r -> r.into(DepartmentRoleInfo.class));
+    Field<List<DepartmentRoleInfo>> departmentRolesMultiset =
+            multiset(
+                    select(
+                            USER_DEPARTMENT_ROLES.DEPARTMENT_ID.as("departmentId"),
+                            USER_DEPARTMENT_ROLES.DEPARTMENT_NAME,
+                            USER_DEPARTMENT_ROLES.ROLE_ID.as("roleId"),
+                            USER_DEPARTMENT_ROLES.ROLE_NAME,
+                            USER_DEPARTMENT_ROLES.ASSIGNMENT_DATE
+                    )
+                            .from(USER_DEPARTMENT_ROLES)
+                            .where(USER_DEPARTMENT_ROLES.USER_ID.eq(userId))
+            )
+                    .as("departmentRoles")
+                    .convertFrom(r -> r.into(DepartmentRoleInfo.class));
 
 
-      return dsl.select(
-              DSL.row(USERS.fields()),
-              DSL.row(MEMBERS.fields()),
-              departmentRolesMultiset
-              )
-              .from(USERS)
-              .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
-              .where(USERS.ID.eq(userId))
-              .fetchOptionalInto(UserMemberDTO.class);
-  }
+    return dsl.select(
+                    USERS.ID,                       // 1. userId
+                    USERS.EMAIL,                    // 2. email
+                    MEMBERS.NAME,                   // 3. name
+                    USERS.PASSWORD,                 // 4. password
+                    MEMBERS.BIRTHDATE,              // 5. birthdate
+                    MEMBERS.GENDER,                 // 6. gender
+                    MEMBERS.ADDRESS,                // 7. address
+                    MEMBERS.PHONE_NUMBER,           // 8. phoneNumber
+                    MEMBERS.PICTURE,                // 9. picture
+                    MEMBERS.REGISTERED_BY_USER_ID,  // 10. registeredByUserId
+                    departmentRolesMultiset         // 11. departmentRoles
+            )
+            .from(USERS)
+            .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
+            .where(USERS.ID.eq(userId))
+            .fetchOptional() // Fetch a single user record (Optional)
+            .map(record -> {
+                List<DepartmentRoleInfo> rolesList =
+                        record.get("departmentRoles", List.class);
+                return new UserMemberDTO(
+                        record.get(USERS.ID),                     // 1
+                        record.get(USERS.EMAIL),                  // 2
+                        record.get(MEMBERS.NAME),                 // 3
+                        record.get(USERS.PASSWORD),               // 4
+                        record.get(MEMBERS.BIRTHDATE),            // 5
+                        record.get(MEMBERS.GENDER),               // 6
+                        record.get(MEMBERS.ADDRESS),              // 7
+                        record.get(MEMBERS.PHONE_NUMBER),         // 8
+                        record.get(MEMBERS.PICTURE),              // 9
+                        record.get(MEMBERS.REGISTERED_BY_USER_ID),// 10
+                        rolesList                                 // 11
+                );
+            });
+    }
 
-    public Optional<UserMemberDTO> findUserWithMemberByEmail(String email) {
+    public Optional<UserMemberDTO> findUserWithDetailsByEmail(String email) {
 
         Field<List<DepartmentRoleInfo>> departmentRolesMultiset =
             multiset(
@@ -112,7 +135,7 @@ public class UserRepository {
                                     select(USERS.ID)
                                     .from(USERS)
                                     .where(USERS.EMAIL.eq(email))
-                            )
+                                )
                             )
             )
                     .as("departmentRoles")
@@ -120,14 +143,39 @@ public class UserRepository {
 
 
         return dsl.select(
-                        DSL.row(USERS.fields()),
-                        DSL.row(MEMBERS.fields()),
-                        departmentRolesMultiset
+                        USERS.ID,                       // 1. userId
+                        USERS.EMAIL,                    // 2. email
+                        MEMBERS.NAME,                   // 3. name
+                        USERS.PASSWORD,                 // 4. password
+                        MEMBERS.BIRTHDATE,              // 5. birthdate
+                        MEMBERS.GENDER,                 // 6. gender
+                        MEMBERS.ADDRESS,                // 7. address
+                        MEMBERS.PHONE_NUMBER,           // 8. phoneNumber
+                        MEMBERS.PICTURE,                // 9. picture
+                        MEMBERS.REGISTERED_BY_USER_ID,  // 10. registeredByUserId
+                        departmentRolesMultiset         // 11. departmentRoles
                 )
                 .from(USERS)
-                .join(MEMBERS).on(USERS.ID.eq(MEMBERS.USER_ID))
+                .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
                 .where(USERS.EMAIL.eq(email))
-                .fetchOptionalInto(UserMemberDTO.class);
+                .fetchOptional()
+                .map(record -> {
+                    List<DepartmentRoleInfo> rolesList =
+                            record.get("departmentRoles", List.class);
+                    return new UserMemberDTO(
+                            record.get(USERS.ID),                     // 1
+                            record.get(USERS.EMAIL),                  // 2
+                            record.get(MEMBERS.NAME),                 // 3
+                            record.get(USERS.PASSWORD),               // 4
+                            record.get(MEMBERS.BIRTHDATE),            // 5
+                            record.get(MEMBERS.GENDER),               // 6
+                            record.get(MEMBERS.ADDRESS),              // 7
+                            record.get(MEMBERS.PHONE_NUMBER),         // 8
+                            record.get(MEMBERS.PICTURE),              // 9
+                            record.get(MEMBERS.REGISTERED_BY_USER_ID),// 10
+                            rolesList                                 // 11
+                    );
+                });
     }
 
 }

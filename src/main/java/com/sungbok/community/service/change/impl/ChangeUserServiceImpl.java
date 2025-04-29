@@ -27,7 +27,7 @@ public class ChangeUserServiceImpl implements ChangeUserService {
     @Override
     public AddUserResponseDTO signup(AddUserRequestDTO dto) {
 
-
+        userRepository.findUserWithDetailsById(1L);
 
         return null;
     }

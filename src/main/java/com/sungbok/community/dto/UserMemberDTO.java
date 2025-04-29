@@ -29,30 +29,44 @@ public class UserMemberDTO {
 
   private final String picture;
 
-  private final String role;
-
   private final Long registeredByUserId;
 
   private final List<DepartmentRoleInfo> departmentRoles; // Changed back to List
 
-  @Builder
-  public UserMemberDTO(Users user, Members member, String role, List<DepartmentRoleInfo> departmentRoles) {
-    this.userId = user.getId();
-    this.email = user.getEmail();
-    this.password = user.getPassword();
-    this.name = member.getName();
-    this.birthdate = member.getBirthdate();
-    this.gender = member.getGender();
-    this.address = member.getAddress();
-    this.phoneNumber = member.getPhoneNumber();
-    this.picture = member.getPicture();
-    this.role = role;
+//  @Builder
+//  public UserMemberDTO(Users user, Members member, String role, List<DepartmentRoleInfo> departmentRoles) {
+//    this.userId = user.getId();
+//    this.email = user.getEmail();
+//    this.password = user.getPassword();
+//    this.name = member.getName();
+//    this.birthdate = member.getBirthdate();
+//    this.gender = member.getGender();
+//    this.address = member.getAddress();
+//    this.phoneNumber = member.getPhoneNumber();
+//    this.picture = member.getPicture();
+//    this.departmentRoles = departmentRoles;
+//    this.registeredByUserId = getRegisteredByUserId();
+//  }
+
+  public UserMemberDTO(
+          Long userId, String email, String name, String password, LocalDate birthdate,
+          String gender, String address, String phoneNumber, String picture,
+          Long registeredByUserId, List<DepartmentRoleInfo> departmentRoles) { // Added list parameter
+    this.userId = userId;
+    this.email = email;
+    this.name = name;
+    this.password = password;
+    this.birthdate = birthdate;
+    this.gender = gender;
+    this.address = address;
+    this.phoneNumber = phoneNumber;
+    this.picture = picture;
+    this.registeredByUserId = registeredByUserId;
     this.departmentRoles = departmentRoles;
-    this.registeredByUserId = getRegisteredByUserId();
   }
 
-  public static UserMemberDTO of(Users user, Members member) {
-    return UserMemberDTO.builder().user(user).member(member).build();
-  }
+//  public static UserMemberDTO of(Users user, Members member) {
+//    return UserMemberDTO.builder().user(user).member(member).build();
+//  }
 
 }
