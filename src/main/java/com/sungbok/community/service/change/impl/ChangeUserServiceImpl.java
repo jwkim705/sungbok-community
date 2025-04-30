@@ -1,5 +1,6 @@
 package com.sungbok.community.service.change.impl;
 
+import com.sungbok.community.common.exception.AlreadyExistException;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.AddUserResponseDTO;
 import com.sungbok.community.dto.UpdateUserWithMember;
@@ -7,6 +8,7 @@ import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.repository.member.MembersRepository;
 import com.sungbok.community.repository.users.UserRepository;
 import com.sungbok.community.service.change.ChangeUserService;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.generated.tables.pojos.Members;
@@ -27,7 +29,9 @@ public class ChangeUserServiceImpl implements ChangeUserService {
     @Override
     public AddUserResponseDTO signup(AddUserRequestDTO dto) {
 
-        userRepository.findUserWithDetailsById(1L);
+        if(Objects.nonNull(userRepository.findUserWithDetailsByEmail(dto.getEmail()))){
+            throw new AlreadyExistException("이미 가입한 회원입니다.");
+        }
 
         return null;
     }
