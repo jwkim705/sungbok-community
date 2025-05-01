@@ -7,7 +7,7 @@ import com.sungbok.community.dto.UserMemberDTO;
 
 public interface ChangeUserService {
 
-    AddUserResponseDTO signup(AddUserRequestDTO dto);
+    UserMemberDTO signup(AddUserRequestDTO dto);
 
     UserMemberDTO saveOrUpdateUser(UpdateUserWithMember updateReq);
 

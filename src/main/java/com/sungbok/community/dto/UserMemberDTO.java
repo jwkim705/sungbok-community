@@ -3,6 +3,7 @@ package com.sungbok.community.dto;
 import lombok.Builder;
 import lombok.Getter;
 import org.jooq.generated.tables.pojos.Members;
+import org.jooq.generated.tables.pojos.UserDepartmentRoles;
 import org.jooq.generated.tables.pojos.Users;
 
 import java.time.LocalDate;
@@ -31,27 +32,27 @@ public class UserMemberDTO {
 
   private final Long registeredByUserId;
 
-  private final List<DepartmentRoleInfo> departmentRoles; // Changed back to List
+  private final List<UserDepartmentRoles> userDeptRoles;
 
-//  @Builder
-//  public UserMemberDTO(Users user, Members member, String role, List<DepartmentRoleInfo> departmentRoles) {
-//    this.userId = user.getId();
-//    this.email = user.getEmail();
-//    this.password = user.getPassword();
-//    this.name = member.getName();
-//    this.birthdate = member.getBirthdate();
-//    this.gender = member.getGender();
-//    this.address = member.getAddress();
-//    this.phoneNumber = member.getPhoneNumber();
-//    this.picture = member.getPicture();
-//    this.departmentRoles = departmentRoles;
-//    this.registeredByUserId = getRegisteredByUserId();
-//  }
+  @Builder
+  public UserMemberDTO(Users user, Members member, List<UserDepartmentRoles> userDeptRoles) {
+    this.userId = user.getId();
+    this.email = user.getEmail();
+    this.password = user.getPassword();
+    this.name = member.getName();
+    this.birthdate = member.getBirthdate();
+    this.gender = member.getGender();
+    this.address = member.getAddress();
+    this.phoneNumber = member.getPhoneNumber();
+    this.picture = member.getPicture();
+    this.userDeptRoles = userDeptRoles;
+    this.registeredByUserId = getRegisteredByUserId();
+  }
 
   public UserMemberDTO(
           Long userId, String email, String name, String password, LocalDate birthdate,
           String gender, String address, String phoneNumber, String picture,
-          Long registeredByUserId, List<DepartmentRoleInfo> departmentRoles) { // Added list parameter
+          Long registeredByUserId, List<UserDepartmentRoles> userDeptRoles) { // Added list parameter
     this.userId = userId;
     this.email = email;
     this.name = name;
@@ -62,11 +63,15 @@ public class UserMemberDTO {
     this.phoneNumber = phoneNumber;
     this.picture = picture;
     this.registeredByUserId = registeredByUserId;
-    this.departmentRoles = departmentRoles;
+    this.userDeptRoles = userDeptRoles;
   }
 
-//  public static UserMemberDTO of(Users user, Members member) {
-//    return UserMemberDTO.builder().user(user).member(member).build();
-//  }
+  public static UserMemberDTO of(Users user, Members member, List<UserDepartmentRoles> userDeptRoles) {
+    return UserMemberDTO.builder()
+            .user(user)
+            .member(member)
+            .userDeptRoles(userDeptRoles)
+            .build();
+  }
 
 }

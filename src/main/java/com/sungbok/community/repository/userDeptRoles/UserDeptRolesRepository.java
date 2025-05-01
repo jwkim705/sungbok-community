@@ -1,20 +1,27 @@
-package com.sungbok.community.repository.departmentRoles;
+package com.sungbok.community.repository.userDeptRoles;
 
-import lombok.RequiredArgsConstructor;
+import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.generated.tables.daos.UserDepartmentRolesDao;
 import org.jooq.generated.tables.pojos.UserDepartmentRoles;
 import org.jooq.generated.tables.records.UserDepartmentRolesRecord;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.jooq.generated.Tables.USER_DEPARTMENT_ROLES;
 
 @Repository
-@RequiredArgsConstructor
-public class DeptRolesRepository {
+public class UserDeptRolesRepository {
 
     private final DSLContext dsl;
+    private final UserDepartmentRolesDao dao;
+
+    public UserDeptRolesRepository(DSLContext dsl, Configuration configuration) {
+        this.dsl = dsl;
+        this.dao = new UserDepartmentRolesDao(configuration);
+    }
 
     public Optional<UserDepartmentRoles> findByUserId(Long userId) {
         return dsl.select(
@@ -35,11 +42,17 @@ public class DeptRolesRepository {
 
         record.setUserId(userDepartmentRoles.getUserId());
         record.setDepartmentId(userDepartmentRoles.getDepartmentId());
+        record.setDepartmentName(userDepartmentRoles.getDepartmentName());
         record.setRoleId(userDepartmentRoles.getRoleId());
+        record.setRoleName(userDepartmentRoles.getRoleName());
         record.store();
 
         return record.into(UserDepartmentRoles.class);
 
+    }
+
+    public List<UserDepartmentRoles> findAllByUserId(Long userId) {
+        return dao.fetchByUserId(userId);
     }
 
 }

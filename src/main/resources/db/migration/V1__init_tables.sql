@@ -145,6 +145,8 @@ CREATE TABLE posts (
     user_id BIGSERIAL NOT NULL REFERENCES users(id), -- 수정됨
     title VARCHAR(255) NOT NULL,
     content TEXT,
+    view_count INT DEFAULT 0 NOT NULL,
+    like_count INT DEFAULT 0 NOT NULL,
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGSERIAL,
@@ -164,6 +166,26 @@ CREATE TABLE post_youtube (
     modified_by BIGSERIAL,
     UNIQUE (post_id, youtube_video_id)
 );
+
+CREATE TABLE post_likes (
+    user_id BIGSERIAL NOT NULL,                -- 좋아요 누른 사용자 ID (users 테이블 참조)
+    post_id BIGSERIAL NOT NULL,                -- 좋아요 눌린 게시글 ID (posts 테이블 참조)
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, -- 좋아요 누른 시각
+
+    PRIMARY KEY (user_id, post_id),        -- 한 사용자가 같은 게시글에 중복 좋아요 방지 (복합 기본키)
+
+    CONSTRAINT fk_user_like
+    FOREIGN KEY(user_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE,                  -- 사용자가 탈퇴하면 좋아요 기록도 삭제
+
+    CONSTRAINT fk_post_like
+    FOREIGN KEY(post_id)
+    REFERENCES posts(post_id)
+    ON DELETE CASCADE                   -- 게시글이 삭제되면 좋아요 기록도 삭제
+);
+
+
 
 -- 댓글 테이블
 CREATE TABLE comments (
@@ -234,7 +256,9 @@ CREATE INDEX idx_family_relations_is_deleted ON family_relations(is_deleted);
 -- posts 테이블 (테이블명 변경됨)
 CREATE INDEX idx_posts_category_id ON posts(category_id);
 CREATE INDEX idx_posts_user_id ON posts(user_id);
-CREATE INDEX idx_posts_created_at ON posts(created_at);
+CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
+CREATE INDEX idx_posts_view_count ON posts(view_count DESC);
+CREATE INDEX idx_posts_like_count ON posts(like_count DESC);
 CREATE INDEX idx_posts_is_deleted ON posts(is_deleted);
 
 -- post_youtube 테이블 (테이블명 변경됨)

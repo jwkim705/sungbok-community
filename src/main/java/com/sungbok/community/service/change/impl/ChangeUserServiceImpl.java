@@ -2,20 +2,23 @@ package com.sungbok.community.service.change.impl;
 
 import com.sungbok.community.common.exception.AlreadyExistException;
 import com.sungbok.community.dto.AddUserRequestDTO;
-import com.sungbok.community.dto.AddUserResponseDTO;
 import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
+import com.sungbok.community.repository.deptRepository.DeptRepository;
 import com.sungbok.community.repository.member.MembersRepository;
+import com.sungbok.community.repository.rolesRepository.RolesRepository;
+import com.sungbok.community.repository.userDeptRoles.UserDeptRolesRepository;
 import com.sungbok.community.repository.users.UserRepository;
 import com.sungbok.community.service.change.ChangeUserService;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.jooq.generated.tables.pojos.Members;
-import org.jooq.generated.tables.pojos.Users;
+import org.jooq.generated.tables.pojos.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -24,16 +27,39 @@ public class ChangeUserServiceImpl implements ChangeUserService {
 
     private final UserRepository userRepository;
     private final MembersRepository membersRepository;
+    private final UserDeptRolesRepository userDeptRolesRepository;
+    private final DeptRepository deptRepository;
+    private final RolesRepository rolesRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
-    public AddUserResponseDTO signup(AddUserRequestDTO dto) {
+    public UserMemberDTO signup(AddUserRequestDTO dto) {
 
         if(Objects.nonNull(userRepository.findUserWithDetailsByEmail(dto.getEmail()))){
             throw new AlreadyExistException("이미 가입한 회원입니다.");
         }
 
-        return null;
+        Users user = userRepository.save(dto);
+        Members member = membersRepository.save(dto);
+
+        Departments departments = deptRepository.findByName(dto.getDeptNm());
+        Roles roles = rolesRepository.findByName(dto.getRole());
+
+        UserDepartmentRoles requestUserDeptRoles = new UserDepartmentRoles();
+        requestUserDeptRoles.setUserId(user.getId());
+        requestUserDeptRoles.setDepartmentId(departments.getId());
+        requestUserDeptRoles.setDepartmentName(departments.getName());
+        requestUserDeptRoles.setRoleId(roles.getId());
+        requestUserDeptRoles.setRoleName(roles.getName());
+        userDeptRolesRepository.save(requestUserDeptRoles);
+
+        List<UserDepartmentRoles> userDepartmentRolesList = userDeptRolesRepository.findAllByUserId(user.getId());
+
+        return UserMemberDTO.builder()
+                .user(user)
+                .member(member)
+                .userDeptRoles(userDepartmentRolesList)
+                .build();
     }
 
 

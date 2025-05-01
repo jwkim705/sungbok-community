@@ -1,23 +1,18 @@
 package com.sungbok.community.repository.users;
 
+import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.DepartmentRoleInfo;
 import com.sungbok.community.dto.UserMemberDTO;
-import org.jooq.*;
-import org.jooq.Record;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
 import org.jooq.generated.tables.daos.UsersDao;
-import org.jooq.generated.tables.pojos.*;
+import org.jooq.generated.tables.pojos.Users;
 import org.jooq.generated.tables.records.UsersRecord;
-import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
-import static org.jooq.generated.Tables.MEMBERS;
-import static org.jooq.generated.Tables.USERS;
-import static org.jooq.generated.Tables.ROLES;
-import static org.jooq.generated.Tables.DEPARTMENTS;
-import static org.jooq.generated.Tables.USER_DEPARTMENT_ROLES;
+import static org.jooq.generated.Tables.*;
 import static org.jooq.impl.DSL.multiset;
 import static org.jooq.impl.DSL.select;
 
@@ -48,6 +43,15 @@ public class UserRepository {
                 .set(record)
                 .returning()
                 .fetchOneInto(Users.class);
+  }
+
+  public Users save(AddUserRequestDTO dto) {
+
+      Users user = new Users()
+              .setEmail(dto.getEmail())
+              .setPassword(dto.getPassword());
+
+      return this.save(user);
   }
 
   public void updateUsingStore(Users user) {

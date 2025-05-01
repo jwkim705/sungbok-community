@@ -2,8 +2,13 @@ package com.sungbok.community.repository.member;
 
 import static org.jooq.generated.Tables.MEMBERS;
 
+import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UpdateMember;
+
+import java.util.Objects;
 import java.util.Optional;
+
+import org.apache.commons.lang3.StringUtils;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.generated.tables.daos.MembersDao;
@@ -49,6 +54,23 @@ public class MembersRepository {
         Long newMemberId = insertedRecord.getId();
         return this.findById(newMemberId)
                    .orElseThrow(() -> new RuntimeException("Failed to find member with ID " + newMemberId + " immediately after saving."));
+    }
+
+    public Members save(AddUserRequestDTO dto){
+
+        Members member = new Members()
+                .setName(dto.getName())
+                .setNickname(dto.getNickname())
+                .setBirthdate(dto.getBirthday())
+                .setGender(dto.getGender())
+                .setAddress(dto.getAddress())
+                .setPhoneNumber(dto.getPhoneNumber());
+
+        if(Objects.nonNull(dto.getRegisteredByUserId()) && dto.getRegisteredByUserId() > 0L){
+            member.setRegisteredByUserId(dto.getRegisteredByUserId());
+        }
+
+        return this.save(member);
     }
 
    public void updateUsingStore(Members member) {

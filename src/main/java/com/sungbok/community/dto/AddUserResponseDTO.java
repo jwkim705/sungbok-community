@@ -4,12 +4,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import org.jooq.generated.tables.pojos.Members;
-import org.jooq.generated.tables.pojos.Roles;
+import org.jooq.generated.tables.pojos.UserDepartmentRoles;
 import org.jooq.generated.tables.pojos.Users;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @Accessors(chain = true)
@@ -17,7 +16,7 @@ public class AddUserResponseDTO {
 
     private final Long userId;
 
-    private final List<String> roles;
+    private final List<UserDepartmentRoles> departmentRoles;
 
     private final String name;
 
@@ -37,10 +36,9 @@ public class AddUserResponseDTO {
 
 
     @Builder
-    public AddUserResponseDTO(Users user, Members member, List<Roles> role) {
+    public AddUserResponseDTO(Users user, Members member, List<UserDepartmentRoles> departmentRoles) {
         this.userId = user.getId();
         this.email = user.getEmail();
-
         this.name = member.getName();
         this.birthday = member.getBirthdate();
         this.gender = member.getGender();
@@ -48,16 +46,15 @@ public class AddUserResponseDTO {
         this.phoneNumber = member.getPhoneNumber();
         this.picture = member.getPicture();
         this.nickname = member.getNickname();
-
-        this.roles = role.stream().map(Roles::getName).collect(Collectors.toList());
+        this.departmentRoles = departmentRoles;
     }
 
-    public static AddUserResponseDTO of(Users user, Members member, List<Roles> role) {
+    public static AddUserResponseDTO of(Users user, Members member, List<UserDepartmentRoles> departmentRoles) {
         return AddUserResponseDTO
                 .builder()
                 .user(user)
                 .member(member)
-                .role(role)
+                .departmentRoles(departmentRoles)
                 .build();
     }
 }
