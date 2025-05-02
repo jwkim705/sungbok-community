@@ -5,11 +5,16 @@ import lombok.Getter;
 import org.jooq.generated.tables.pojos.Members;
 import org.jooq.generated.tables.pojos.Users;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
 @Getter
-public class UserMemberDTO {
+public class UserMemberDTO implements Serializable {
+
+  @Serial
+  private static final long serialVersionUID = 5146495955594586796L;
 
   private final Long userId;
 

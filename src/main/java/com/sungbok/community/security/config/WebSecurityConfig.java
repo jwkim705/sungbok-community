@@ -4,7 +4,6 @@ import com.sungbok.community.config.CorsConfig;
 import com.sungbok.community.security.handler.*;
 import com.sungbok.community.security.provider.AuthProvider;
 import com.sungbok.community.security.provider.CustomAuthenticationProvider;
-import com.sungbok.community.security.service.impl.Oauth2UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +16,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -82,24 +82,17 @@ public class WebSecurityConfig {
                                 .logoutSuccessHandler(customLogoutSuccessHandler)
                                 .invalidateHttpSession(true)
                 )
-                .sessionManagement(configurer ->
-                        configurer
-                                .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
+                .sessionManagement(session -> // 세션 고정 보호
+                        session
+                        .sessionCreationPolicy(SessionCreationPolicy.ALWAYS) // 생성 정책
+                        .sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::newSession)
+                        .maximumSessions(1) // 동시 세션 제어
+                        .maxSessionsPreventsLogin(true) // 최대 세션 도달 시 로그인 차단
                 )
                 .exceptionHandling(handler ->
                         handler
                                 .authenticationEntryPoint(customAuthenticationEntryPointHandler)
                                 .accessDeniedHandler(customAccessDeniedHandler)
-                )
-                .sessionManagement(auth ->
-                        auth
-                                .maximumSessions(1)
-                                .maxSessionsPreventsLogin(true)
-                )
-                .sessionManagement(session ->
-                        session
-                                .sessionFixation()
-                                .newSession()
                 )
                 .build();
     }

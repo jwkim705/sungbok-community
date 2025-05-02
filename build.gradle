@@ -55,8 +55,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation' // 요청 유효성 검사 추가
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client' // OAuth2 로그인 추가
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis' // Valkey/Redis 세션 관리를 위해 추가
-    implementation 'org.springframework.session:spring-session-data-redis' // Redis/Valkey 세션 통합을 위해 추가
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.session:spring-session-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-log4j2'
 
     // 데이터베이스 & jOOQ

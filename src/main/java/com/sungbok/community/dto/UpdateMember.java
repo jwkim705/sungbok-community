@@ -6,10 +6,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Getter
 @Setter
 @NoArgsConstructor
-public class UpdateMember {
+public class UpdateMember implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -3338573989333288366L;
 
     private Long id;
 

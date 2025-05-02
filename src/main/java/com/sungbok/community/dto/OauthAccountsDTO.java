@@ -7,9 +7,15 @@ import lombok.NoArgsConstructor;
 import org.jooq.generated.tables.pojos.OauthAccounts;
 import org.jooq.generated.tables.pojos.Users;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Getter
 @NoArgsConstructor
-public class OauthAccountsDTO {
+public class OauthAccountsDTO implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 6387745589670666639L;
 
     private Long id;
     private Long userId;

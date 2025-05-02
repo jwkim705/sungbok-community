@@ -5,9 +5,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.jooq.generated.tables.pojos.Roles;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Getter
 @NoArgsConstructor
-public class RolesDTO {
+public class RolesDTO implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -1538326834072823949L;
 
     private Long id;
     private String name;

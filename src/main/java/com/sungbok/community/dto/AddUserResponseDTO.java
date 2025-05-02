@@ -7,12 +7,17 @@ import org.jooq.generated.tables.pojos.Members;
 import org.jooq.generated.tables.pojos.UserDepartmentRoles;
 import org.jooq.generated.tables.pojos.Users;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
 @Getter
 @Accessors(chain = true)
-public class AddUserResponseDTO {
+public class AddUserResponseDTO implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1628552754217111345L;
 
     private final Long userId;
 

@@ -12,13 +12,15 @@ public class AuthProvider {
       "/swagger-ui/**",
       "/swagger.html",
       "/h2-console/**",
+      "/api/login",
+      "/api/logout",
     };
   }
 
   public String[] whiteListDefaultEndpoints() {
 
     return new String[] {
-      "/api/v1/**",
+      "/api/**",
     };
   }
 

@@ -2,10 +2,8 @@ package com.sungbok.community.security.handler;
 
 import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.security.model.PrincipalDetails;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
 
 @Slf4j
 @Component
@@ -30,9 +30,6 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
 
       PrincipalDetails user =  (PrincipalDetails) authentication.getPrincipal();
       log.info("Success logout User: {}", defaultJacksonConverter.getObjectMapper().writeValueAsString(user.getUser()));
-
-      request.getSession().invalidate();
-      SecurityContextHolder.clearContext();
 
       OkResponseDTO responseDTO = OkResponseDTO.of(HttpStatus.OK.value(), HttpStatus.OK.name(), user.getUser());
       response.setCharacterEncoding("UTF-8");
