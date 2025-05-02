@@ -10,7 +10,14 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.5'
     id 'io.spring.dependency-management' version '1.1.7'
+
+    //jooq
     id 'dev.monosoul.jooq-docker' version '7.0.8'
+
+    //restdocs
+    id 'org.asciidoctor.jvm.convert' version '4.0.4'
+    id 'com.epages.restdocs-api-spec' version '0.19.4'
+    id 'org.hidetake.swagger.generator' version '2.19.2'
 }
 
 group = 'com.sungbok'
@@ -72,11 +79,15 @@ dependencies {
     // API 문서화
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6' // Swagger UI 추가
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc' // Spring REST Docs 추가
+    testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.19.4'
 
     //common String util
     implementation 'commons-io:commons-io:2.19.0'
     implementation 'org.apache.commons:commons-text:1.13.1'
     implementation 'org.apache.commons:commons-lang3:3.17.0'
+
+    //object mapper
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.0'
 
     // 테스팅
     implementation 'org.springframework.boot:spring-boot-starter-test'
@@ -131,6 +142,33 @@ tasks {
     }
 }
 
+sourceSets {
+    main {
+        resources {
+            // openapi3 출력 디렉토리를 리소스로 포함
+            srcDir 'build/resources/main/static'
+        }
+    }
+}
+
+openapi3 {
+    servers = [
+            { url = "http://localhost:8080"; description = "Local server" }
+    ]
+    title = "Spring Restdocs with SwaggerUI Sample"
+    description = "This is made with Spring REST Docs with SwaggerUI."
+    version = "0.0.1"
+    format = 'json'
+}
+
+bootJar {
+    dependsOn(':test')
+    dependsOn(':openapi3')
+}
+
+ext {
+    snippetsDir = file('build/generated-snippets')
+}
 
 tasks.named('test') {
     useJUnitPlatform()

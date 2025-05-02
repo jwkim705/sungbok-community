@@ -13,6 +13,7 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.generated.tables.daos.MembersDao;
 import org.jooq.generated.tables.pojos.Members;
+import org.jooq.generated.tables.pojos.Users;
 import org.jooq.generated.tables.records.MembersRecord;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,9 +57,10 @@ public class MembersRepository {
                    .orElseThrow(() -> new RuntimeException("Failed to find member with ID " + newMemberId + " immediately after saving."));
     }
 
-    public Members save(AddUserRequestDTO dto){
+    public Members save(AddUserRequestDTO dto, Users user){
 
         Members member = new Members()
+                .setUserId(user.getId())
                 .setName(dto.getName())
                 .setNickname(dto.getNickname())
                 .setBirthdate(dto.getBirthday())

@@ -1,8 +1,8 @@
 package com.sungbok.community.dto;
 
+import com.sungbok.community.service.change.ChangeUserService;
 import jakarta.validation.constraints.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 import java.time.LocalDate;
@@ -10,6 +10,9 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @Accessors(chain = true)
+@NoArgsConstructor // 기본 생성자 추가
+@AllArgsConstructor // 모든 필드를 받는 생성자 추가
+@Builder
 public class AddUserRequestDTO {
 
     @NotBlank(message = "이메일은 필수 입력 값입니다.")

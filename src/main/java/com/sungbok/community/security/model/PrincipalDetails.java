@@ -1,18 +1,19 @@
 package com.sungbok.community.security.model;
 
-import java.io.Serial;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List; // Import List
-import java.util.Map;
-
 import com.sungbok.community.dto.DepartmentRoleInfo;
 import com.sungbok.community.dto.UserMemberDTO;
 import lombok.Getter;
+import org.jooq.generated.tables.pojos.UserDepartmentRoles;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+
+import java.io.Serial;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 public class PrincipalDetails implements UserDetails, OAuth2User {
@@ -38,15 +39,15 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
     Collection<GrantedAuthority> authorities = new ArrayList<>();
-    List<DepartmentRoleInfo> roles = user.getDepartmentRoles();
+    List<DepartmentRoleInfo> roles = user.getUserDeptRoles();
 
     if (roles != null) { // Null check for safety
-      for (DepartmentRoleInfo roleInfo : roles) {
+      for (DepartmentRoleInfo role : roles) {
         // 역할 이름 앞에 "ROLE_" 접두사를 붙여서 권한 생성 (일반적인 방식)
         // 또는 필요에 따라 departmentName + roleName 조합 등 다른 방식으로 권한 문자열 생성 가능
-        if (roleInfo != null && roleInfo.getRoleName() != null && !roleInfo.getRoleName().isEmpty()) {
-          authorities.add(new SimpleGrantedAuthority("ROLE_" + roleInfo.getRoleName()));
-          // 예: 부서명까지 포함하려면 -> authorities.add(new SimpleGrantedAuthority("ROLE_" + roleInfo.getDepartmentName() + "_" + roleInfo.getRoleName()));
+        if (role != null && role.getRoleName() != null && !role.getRoleName().isEmpty()) {
+          authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getRoleName()));
+          // 예: 부서명까지 포함하려면 -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getDepartmentName() + "_" + role.getRoleName()));
         }
       }
     }

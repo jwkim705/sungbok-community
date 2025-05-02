@@ -3,7 +3,6 @@ package com.sungbok.community.dto;
 import lombok.Builder;
 import lombok.Getter;
 import org.jooq.generated.tables.pojos.Members;
-import org.jooq.generated.tables.pojos.UserDepartmentRoles;
 import org.jooq.generated.tables.pojos.Users;
 
 import java.time.LocalDate;
@@ -32,10 +31,10 @@ public class UserMemberDTO {
 
   private final Long registeredByUserId;
 
-  private final List<UserDepartmentRoles> userDeptRoles;
+  private final List<DepartmentRoleInfo> userDeptRoles;
 
   @Builder
-  public UserMemberDTO(Users user, Members member, List<UserDepartmentRoles> userDeptRoles) {
+  public UserMemberDTO(Users user, Members member, List<DepartmentRoleInfo> userDeptRoles) {
     this.userId = user.getId();
     this.email = user.getEmail();
     this.password = user.getPassword();
@@ -52,7 +51,7 @@ public class UserMemberDTO {
   public UserMemberDTO(
           Long userId, String email, String name, String password, LocalDate birthdate,
           String gender, String address, String phoneNumber, String picture,
-          Long registeredByUserId, List<UserDepartmentRoles> userDeptRoles) { // Added list parameter
+          Long registeredByUserId, List<DepartmentRoleInfo> userDeptRoles) { // Added list parameter
     this.userId = userId;
     this.email = email;
     this.name = name;
@@ -66,7 +65,7 @@ public class UserMemberDTO {
     this.userDeptRoles = userDeptRoles;
   }
 
-  public static UserMemberDTO of(Users user, Members member, List<UserDepartmentRoles> userDeptRoles) {
+  public static UserMemberDTO of(Users user, Members member, List<DepartmentRoleInfo> userDeptRoles) {
     return UserMemberDTO.builder()
             .user(user)
             .member(member)

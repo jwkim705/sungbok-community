@@ -8,6 +8,7 @@ import org.jooq.DSLContext;
 import org.jooq.generated.tables.daos.UsersDao;
 import org.jooq.generated.tables.pojos.Users;
 import org.jooq.generated.tables.records.UsersRecord;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -21,10 +22,12 @@ public class UserRepository {
 
   private final DSLContext dsl;
   private final UsersDao dao;
+  private final BCryptPasswordEncoder passwordEncoder;
 
-  public UserRepository(DSLContext dsl, Configuration configuration) {
+  public UserRepository(DSLContext dsl, Configuration configuration, BCryptPasswordEncoder passwordEncoder) {
     this.dsl = dsl;
     this.dao = new UsersDao(configuration);
+      this.passwordEncoder = passwordEncoder;
   }
 
   public Optional<Users> findById(Long id) {
@@ -49,7 +52,7 @@ public class UserRepository {
 
       Users user = new Users()
               .setEmail(dto.getEmail())
-              .setPassword(dto.getPassword());
+              .setPassword(passwordEncoder.encode(dto.getPassword()));
 
       return this.save(user);
   }
@@ -99,7 +102,7 @@ public class UserRepository {
               .fetchOptionalInto(UserMemberDTO.class);
     }
 
-    public Optional<UserMemberDTO> findUserWithDetailsByEmail(String email) {
+    public Optional<UserMemberDTO> findUserWithDetailsByEmailOptional(String email) {
         return dsl.select(
                         USERS.ID,                       // 1. userId
                         USERS.EMAIL,                    // 2. email
@@ -133,6 +136,42 @@ public class UserRepository {
                 .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
                 .where(USERS.EMAIL.eq(email))
                 .fetchOptionalInto(UserMemberDTO.class);
+    }
+
+    public UserMemberDTO findUserWithDetailsByEmail(String email) {
+        return dsl.select(
+                        USERS.ID,                       // 1. userId
+                        USERS.EMAIL,                    // 2. email
+                        MEMBERS.NAME,                   // 3. name
+                        USERS.PASSWORD,                 // 4. password
+                        MEMBERS.BIRTHDATE,              // 5. birthdate
+                        MEMBERS.GENDER,                 // 6. gender
+                        MEMBERS.ADDRESS,                // 7. address
+                        MEMBERS.PHONE_NUMBER,           // 8. phoneNumber
+                        MEMBERS.PICTURE,                // 9. picture
+                        MEMBERS.REGISTERED_BY_USER_ID,  // 10. registeredByUserId
+                        multiset(
+                                select(
+                                        USER_DEPARTMENT_ROLES.DEPARTMENT_ID.as("departmentId"),
+                                        USER_DEPARTMENT_ROLES.DEPARTMENT_NAME,
+                                        USER_DEPARTMENT_ROLES.ROLE_ID.as("roleId"),
+                                        USER_DEPARTMENT_ROLES.ROLE_NAME,
+                                        USER_DEPARTMENT_ROLES.ASSIGNMENT_DATE
+                                )
+                                        .from(USER_DEPARTMENT_ROLES)
+                                        .where(USER_DEPARTMENT_ROLES.USER_ID.eq(
+                                                select(USERS.ID)
+                                                        .from(USERS)
+                                                        .where(USERS.EMAIL.eq(email)))
+                                        )
+                        )
+                                .as("departmentRoles")
+                                .convertFrom(r -> r.into(DepartmentRoleInfo.class))
+                )
+                .from(USERS)
+                .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
+                .where(USERS.EMAIL.eq(email))
+                .fetchOneInto(UserMemberDTO.class);
     }
 
 }

@@ -53,6 +53,10 @@
             <AppenderRef ref="AsyncErrorFileLog"/>
         </Logger>
 
+        <Logger name="org.jooq.tools.LoggerListener" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
         <logger name="org.springframework" additivity="true"/>
         <Logger name="com.rsupport.tech_scheduler" level="INFO" />
 

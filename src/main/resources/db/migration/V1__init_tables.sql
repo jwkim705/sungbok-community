@@ -64,7 +64,7 @@ CREATE TABLE members (
     birthdate DATE,
     gender VARCHAR(10), -- MALE, FEMALE
     address TEXT,
-    phone_number VARCHAR(20) UNIQUE,
+    phone_number VARCHAR(20),
     picture TEXT, -- Oauth 프로필
     nickname VARCHAR(50),
     is_deleted BOOLEAN DEFAULT FALSE,
@@ -280,55 +280,55 @@ CREATE INDEX idx_files_is_deleted ON files(is_deleted);
 CREATE INDEX idx_users_is_deleted ON users(is_deleted);
 
 -- 1. 부서 (departments) - Updated List
-INSERT INTO departments (id, name, description, created_by, modified_by)
+INSERT INTO departments (name, description, created_by, modified_by)
 VALUES
-    (1, '영아부', '영아 대상 부서', 1, 1),
-    (2, '유치부', '유치원생 대상 부서', 1, 1),
-    (3, '유년부', '초등학교 저학년 대상 부서', 1, 1),
-    (4, '초등부', '초등학교 고학년 대상 부서', 1, 1),
-    (5, '중등부', '중학생 대상 부서', 1, 1),
-    (6, '고등부', '고등학생 대상 부서', 1, 1),
-    (7, '영어예배부', '영어로 진행되는 예배 부서', 1, 1),
-    (8, '청년부', '교회 청년들을 위한 부서', 1, 1),
-    (9, '엘림가족부', '젊은 부부들을 위한 부서', 1, 1),
-    (10, '장년부', '교회 장년들을 위한 부서', 1, 1)
+    ('영아부', '영아 대상 부서', 1, 1),
+    ('유치부', '유치원생 대상 부서', 1, 1),
+    ('유년부', '초등학교 저학년 대상 부서', 1, 1),
+    ('초등부', '초등학교 고학년 대상 부서', 1, 1),
+    ('중등부', '중학생 대상 부서', 1, 1),
+    ('고등부', '고등학생 대상 부서', 1, 1),
+    ('영어예배부', '영어로 진행되는 예배 부서', 1, 1),
+    ('청년부', '교회 청년들을 위한 부서', 1, 1),
+    ('엘림가족부', '젊은 부부들을 위한 부서', 1, 1),
+    ('장년부', '교회 장년들을 위한 부서', 1, 1)
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. 역할 (roles)
-INSERT INTO roles (id, name, description, created_by, modified_by)
+INSERT INTO roles (name, description, created_by, modified_by)
 values
-    (1, '성도', '일반 성도 역할입니다.', 1, 1),
-    (2, '리더', '부서 또는 그룹의 리더 역할입니다.', 1, 1),
-    (3, '교사', '교육을 담당하는 역할입니다.', 1, 1),
-    (4, '마을장', '부서 또는 그룹의 마을장 역할입니다.', 1, 1),
-    (5, '스탭장', '스탭장 역할입니다.', 1, 1),
-    (6, '스탭', '스탭 역할입니다.', 1, 1),
-    (7, '부장', '스탭 역할입니다.', 1, 1),
-    (8, '부감', '스탭 역할입니다.', 1, 1),
-    (9, '총무', '스탭 역할입니다.', 1, 1),
-    (10, '회계', '스탭 역할입니다.', 1, 1),
-    (11, '간사', '스탭 역할입니다.', 1, 1),
-    (12, '목사', '스탭 역할입니다.', 1, 1),
-    (13, '아이', '스탭 역할입니다.', 1, 1),
-    (14, '찬양팀', '찬양팀 역할입니다.', 1, 1)
+    ('성도', '일반 성도 역할입니다.', 1, 1),
+    ('리더', '부서 또는 그룹의 리더 역할입니다.', 1, 1),
+    ('교사', '교육을 담당하는 역할입니다.', 1, 1),
+    ('마을장', '부서 또는 그룹의 마을장 역할입니다.', 1, 1),
+    ('스탭장', '스탭장 역할입니다.', 1, 1),
+    ('스탭', '스탭 역할입니다.', 1, 1),
+    ('부장', '스탭 역할입니다.', 1, 1),
+    ('부감', '스탭 역할입니다.', 1, 1),
+    ('총무', '스탭 역할입니다.', 1, 1),
+    ('회계', '스탭 역할입니다.', 1, 1),
+    ('간사', '스탭 역할입니다.', 1, 1),
+    ('목사', '스탭 역할입니다.', 1, 1),
+    ('아이', '스탭 역할입니다.', 1, 1),
+    ('찬양팀', '찬양팀 역할입니다.', 1, 1)
 ON CONFLICT (id) DO NOTHING;
 
 -- 3. 게시판 카테고리 (board_categories)
-INSERT INTO board_categories (category_id, name, description, created_by, modified_by)
+INSERT INTO board_categories (name, description, created_by, modified_by)
 VALUES
-    (1, '자유게시판', '자유롭게 글을 작성하는 게시판입니다.', 1, 1),
-    (2, '공지사항', '교회 공지사항 게시판입니다.', 1, 1),
-    (3, '찬양팀 악보', '찬양팀 악보 공유 게시판입니다.', 1, 1)
+    ('자유게시판', '자유롭게 글을 작성하는 게시판입니다.', 1, 1),
+    ('공지사항', '교회 공지사항 게시판입니다.', 1, 1),
+    ('찬양팀 악보', '찬양팀 악보 공유 게시판입니다.', 1, 1)
 ON CONFLICT (category_id) DO NOTHING;
 
 -- 4. 사용자 (users) - 여러 명 생성
-INSERT INTO users (id, email, password, created_by, modified_by)
+INSERT INTO users (email, password, created_by, modified_by)
 VALUES
-    (1, 'admin@example.com', '$2a$10$abcdefghijklmnopqrstuv', 1, 1), -- 관리자/리더
-    (2, 'member1@example.com', '$2a$10$wxyzabcdefghijklmnopq', 1, 1), -- 성도1
-    (3, 'member2@example.com', '$2a$10$1234567890abcdefghijkl', 1, 1), -- 성도2
-    (4, 'leader2@example.com', '$2a$10$zyxwutsrqponmlkjihgfe', 1, 1),  -- 다른 리더
-    (5, 'children@example.com', '$2a$10$zyxwutsrqponmlkjihgfe', 1, 1)  -- 아이
+    ('admin@example.com', '$2a$10$abcdefghijklmnopqrstuv', 1, 1), -- 관리자/리더
+    ('member1@example.com', '$2a$10$wxyzabcdefghijklmnopq', 1, 1), -- 성도1
+    ('member2@example.com', '$2a$10$1234567890abcdefghijkl', 1, 1), -- 성도2
+    ('leader2@example.com', '$2a$10$zyxwutsrqponmlkjihgfe', 1, 1),  -- 다른 리더
+    ('children@example.com', '$2a$10$zyxwutsrqponmlkjihgfe', 1, 1)  -- 아이
 ON CONFLICT (id) DO NOTHING;
 
 -- 5. OAuth 계정 (oauth_accounts) - 사용자 1, 2에 연결
@@ -339,13 +339,13 @@ VALUES
 ON CONFLICT (id) DO NOTHING; -- Assumes id is SERIAL/BIGSERIAL
 
 -- 6. 성도 정보 (members) - 사용자들에 연결
-INSERT INTO members (id, user_id, name, birthdate, gender, address, phone_number, nickname, registered_by_user_id, created_by, modified_by)
+INSERT INTO members (user_id, name, birthdate, gender, address, phone_number, nickname, registered_by_user_id, created_by, modified_by)
 VALUES
-    (1, 1, '홍길동', '1995-03-15', 'MALE', '서울시 강남구', '010-1234-5678', '쾌도홍', 1, 1, 1),
-    (2, 2, '성춘향', '1996-08-20', 'FEMALE', '서울시 서초구', '010-9876-5432', '춘향사랑', 1, 1, 1),
-    (3, 3, '이몽룡', '1994-11-10', 'MALE', '서울시 송파구', '010-1111-2222', '몽룡이', 1, 1, 1),
-    (4, 4, '김관리', '1990-01-01', 'MALE', '서울시 마포구', '010-5555-6666', '관리자킴', 1, 1, 1),
-    (5, 5, '김아이', '2025-01-01', 'MALE', '서울시 노원구', '010-6666-7777', '김칠드런', 1, 1, 1)
+    (1, '홍길동', '1995-03-15', 'MALE', '서울시 강남구', '010-1234-5678', '쾌도홍', 1, 1, 1),
+    (2, '성춘향', '1996-08-20', 'FEMALE', '서울시 서초구', '010-9876-5432', '춘향사랑', 1, 1, 1),
+    (3, '이몽룡', '1994-11-10', 'MALE', '서울시 송파구', '010-1111-2222', '몽룡이', 1, 1, 1),
+    (4, '김관리', '1990-01-01', 'MALE', '서울시 마포구', '010-5555-6666', '관리자킴', 1, 1, 1),
+    (5, '김아이', '2025-01-01', 'MALE', '서울시 노원구', '010-6666-7777', '김칠드런', 1, 1, 1)
 ON CONFLICT (id) DO NOTHING;
 
 -- 7. 성도-부서 소속 (member_departments) - 업데이트된 부서 ID 사용
@@ -384,11 +384,11 @@ VALUES
 ON CONFLICT (member1_id, member2_id, relationship_type) DO NOTHING;
 
 -- 11. 게시글 (posts) - 여러 개 작성
-INSERT INTO posts (post_id, category_id, user_id, title, content, created_by, modified_by)
+INSERT INTO posts (category_id, user_id, title, content, created_by, modified_by)
 VALUES
-    (1, 1, 1, '첫 번째 자유게시글', '자유게시판 내용입니다.', 1, 1),
-    (2, 2, 4, '교회 대청소 안내', '5월 첫째 주 토요일 대청소를 진행합니다.', 4, 4),
-    (3, 3, 1, '새 찬양 악보 공유', '이번 주 찬양팀 악보입니다.', 1, 1)
+    (1, 1, '첫 번째 자유게시글', '자유게시판 내용입니다.', 1, 1),
+    (2, 4, '교회 대청소 안내', '5월 첫째 주 토요일 대청소를 진행합니다.', 4, 4),
+    (3, 1, '새 찬양 악보 공유', '이번 주 찬양팀 악보입니다.', 1, 1)
 ON CONFLICT (post_id) DO NOTHING;
 
 -- 12. 게시글-유튜브 (post_youtube) - 게시글 3에 연결
@@ -397,16 +397,16 @@ VALUES (3, 'abcdef12345', 1, 1) -- Example YouTube video ID
 ON CONFLICT (post_id, youtube_video_id) DO NOTHING;
 
 -- 13. 댓글 (comments) - 여러 댓글, 대댓글 포함
-INSERT INTO comments (comment_id, post_id, user_id, content, created_by, modified_by)
+INSERT INTO comments (post_id, user_id, content, created_by, modified_by)
 VALUES
-    (1, 1, 2, '좋은 글 감사합니다!', 2, 2),         -- 성춘향 -> 게시글 1 댓글
-    (2, 2, 3, '확인했습니다. 참석하겠습니다.', 3, 3), -- 이몽룡 -> 게시글 2 댓글
-    (3, 1, 3, '저도 잘 읽었습니다.', 3, 3)          -- 이몽룡 -> 게시글 1 댓글
+    (1, 2, '좋은 글 감사합니다!', 2, 2),         -- 성춘향 -> 게시글 1 댓글
+    (2, 3, '확인했습니다. 참석하겠습니다.', 3, 3), -- 이몽룡 -> 게시글 2 댓글
+    (1, 3, '저도 잘 읽었습니다.', 3, 3)          -- 이몽룡 -> 게시글 1 댓글
 ON CONFLICT (comment_id) DO NOTHING;
 
 -- 대댓글 예시 (댓글 1에 대한 대댓글)
-INSERT INTO comments (comment_id, post_id, user_id, parent_comment_id, content, created_by, modified_by)
-VALUES (4, 1, 1, 1, '읽어주셔서 감사합니다!', 1, 1) -- 홍길동 -> 댓글 1 (성춘향)에 대한 대댓글
+INSERT INTO comments (post_id, user_id, parent_comment_id, content, created_by, modified_by)
+VALUES (1, 1, 1, '읽어주셔서 감사합니다!', 1, 1) -- 홍길동 -> 댓글 1 (성춘향)에 대한 대댓글
 ON CONFLICT (comment_id) DO NOTHING;
 
 -- 14. 파일 (files) - 게시글 2 (공지사항)에 파일 첨부
