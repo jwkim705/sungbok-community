@@ -1,7 +1,6 @@
 package com.sungbok.community.repository.users;
 
 import com.sungbok.community.dto.AddUserRequestDTO;
-import com.sungbok.community.dto.DepartmentRoleInfo;
 import com.sungbok.community.dto.UserMemberDTO;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
@@ -11,11 +10,11 @@ import org.jooq.generated.tables.records.UsersRecord;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static org.jooq.generated.Tables.*;
-import static org.jooq.impl.DSL.multiset;
-import static org.jooq.impl.DSL.select;
+import static org.jooq.generated.Tables.MEMBERS;
+import static org.jooq.generated.Tables.USERS;
 
 @Repository
 public class UserRepository {
@@ -52,7 +51,10 @@ public class UserRepository {
 
       Users user = new Users()
               .setEmail(dto.getEmail())
-              .setPassword(passwordEncoder.encode(dto.getPassword()));
+              .setPassword(passwordEncoder.encode(dto.getPassword()))
+              .setIsDeleted(false)
+              .setCreatedAt(LocalDateTime.now())
+              .setModifiedAt(LocalDateTime.now());
 
       return this.save(user);
   }
@@ -82,19 +84,7 @@ public class UserRepository {
                       MEMBERS.PHONE_NUMBER,           // 8. phoneNumber
                       MEMBERS.PICTURE,                // 9. picture
                       MEMBERS.REGISTERED_BY_USER_ID,  // 10. registeredByUserId
-                      multiset(
-                          select(
-                                USER_DEPARTMENT_ROLES.DEPARTMENT_ID.as("departmentId"),
-                                USER_DEPARTMENT_ROLES.DEPARTMENT_NAME,
-                                USER_DEPARTMENT_ROLES.ROLE_ID.as("roleId"),
-                                USER_DEPARTMENT_ROLES.ROLE_NAME,
-                                USER_DEPARTMENT_ROLES.ASSIGNMENT_DATE
-                          )
-                        .from(USER_DEPARTMENT_ROLES)
-                        .where(USER_DEPARTMENT_ROLES.USER_ID.eq(userId))
-                      )
-                      .as("departmentRoles")
-                      .convertFrom(r -> r.into(DepartmentRoleInfo.class))
+                      MEMBERS.ROLE                    // 11. role
               )
               .from(USERS)
               .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
@@ -114,23 +104,7 @@ public class UserRepository {
                         MEMBERS.PHONE_NUMBER,           // 8. phoneNumber
                         MEMBERS.PICTURE,                // 9. picture
                         MEMBERS.REGISTERED_BY_USER_ID,  // 10. registeredByUserId
-                        multiset(
-                            select(
-                                  USER_DEPARTMENT_ROLES.DEPARTMENT_ID.as("departmentId"),
-                                  USER_DEPARTMENT_ROLES.DEPARTMENT_NAME,
-                                  USER_DEPARTMENT_ROLES.ROLE_ID.as("roleId"),
-                                  USER_DEPARTMENT_ROLES.ROLE_NAME,
-                                  USER_DEPARTMENT_ROLES.ASSIGNMENT_DATE
-                            )
-                          .from(USER_DEPARTMENT_ROLES)
-                          .where(USER_DEPARTMENT_ROLES.USER_ID.eq(
-                                  select(USERS.ID)
-                                  .from(USERS)
-                                  .where(USERS.EMAIL.eq(email)))
-                          )
-                        )
-                        .as("departmentRoles")
-                        .convertFrom(r -> r.into(DepartmentRoleInfo.class))
+                        MEMBERS.ROLE                    // 11. role
                 )
                 .from(USERS)
                 .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
@@ -150,23 +124,7 @@ public class UserRepository {
                         MEMBERS.PHONE_NUMBER,           // 8. phoneNumber
                         MEMBERS.PICTURE,                // 9. picture
                         MEMBERS.REGISTERED_BY_USER_ID,  // 10. registeredByUserId
-                        multiset(
-                                select(
-                                        USER_DEPARTMENT_ROLES.DEPARTMENT_ID.as("departmentId"),
-                                        USER_DEPARTMENT_ROLES.DEPARTMENT_NAME,
-                                        USER_DEPARTMENT_ROLES.ROLE_ID.as("roleId"),
-                                        USER_DEPARTMENT_ROLES.ROLE_NAME,
-                                        USER_DEPARTMENT_ROLES.ASSIGNMENT_DATE
-                                )
-                                        .from(USER_DEPARTMENT_ROLES)
-                                        .where(USER_DEPARTMENT_ROLES.USER_ID.eq(
-                                                select(USERS.ID)
-                                                        .from(USERS)
-                                                        .where(USERS.EMAIL.eq(email)))
-                                        )
-                        )
-                                .as("departmentRoles")
-                                .convertFrom(r -> r.into(DepartmentRoleInfo.class))
+                        MEMBERS.ROLE                    // 11. role
                 )
                 .from(USERS)
                 .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))

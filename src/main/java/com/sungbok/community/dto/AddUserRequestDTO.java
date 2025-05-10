@@ -47,10 +47,8 @@ public class AddUserRequestDTO implements Serializable {
     @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$", message = "휴대폰 번호 형식이 올바르지 않습니다. (예: 010-1234-5678)")
     private String phoneNumber;
 
-    @NotBlank
     private String deptNm;
 
-    @NotBlank
     private String role;
 
     @Positive(message = "등록자 ID는 양수여야 합니다.")

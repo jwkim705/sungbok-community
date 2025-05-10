@@ -1,13 +1,7 @@
 package com.sungbok.community.repository.member;
 
-import static org.jooq.generated.Tables.MEMBERS;
-
 import com.sungbok.community.dto.AddUserRequestDTO;
-import com.sungbok.community.dto.UpdateMember;
-
-import java.util.Objects;
-import java.util.Optional;
-
+import com.sungbok.community.enums.UserRole;
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
@@ -16,7 +10,12 @@ import org.jooq.generated.tables.pojos.Members;
 import org.jooq.generated.tables.pojos.Users;
 import org.jooq.generated.tables.records.MembersRecord;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.Optional;
+
+import static org.jooq.generated.Tables.MEMBERS;
 
 @Repository
 public class MembersRepository {
@@ -59,6 +58,10 @@ public class MembersRepository {
 
     public Members save(AddUserRequestDTO dto, Users user){
 
+        if(StringUtils.isBlank(dto.getRole())){
+            dto.setRole(UserRole.USER.getCode());
+        }
+
         Members member = new Members()
                 .setUserId(user.getId())
                 .setName(dto.getName())
@@ -66,10 +69,18 @@ public class MembersRepository {
                 .setBirthdate(dto.getBirthday())
                 .setGender(dto.getGender())
                 .setAddress(dto.getAddress())
+                .setRole(dto.getRole())
+                .setIsDeleted(false)
+                .setCreatedAt(LocalDateTime.now())
+                .setCreatedBy(user.getId())
+                .setModifiedAt(LocalDateTime.now())
+                .setModifiedBy(user.getId())
                 .setPhoneNumber(dto.getPhoneNumber());
 
         if(Objects.nonNull(dto.getRegisteredByUserId()) && dto.getRegisteredByUserId() > 0L){
             member.setRegisteredByUserId(dto.getRegisteredByUserId());
+        } else {
+            member.setRegisteredByUserId(user.getId());
         }
 
         return this.save(member);

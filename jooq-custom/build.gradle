@@ -3,7 +3,11 @@ plugins {
 }
 
 group = 'com.sungbok'
-version = '3.20.3'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
 
 repositories {
     mavenCentral()
@@ -11,6 +15,5 @@ repositories {
 
 dependencies {
     implementation "org.jooq:jooq-codegen:${jooqVersion}"
-    runtimeOnly 'org.postgresql:postgresql'
 }
 

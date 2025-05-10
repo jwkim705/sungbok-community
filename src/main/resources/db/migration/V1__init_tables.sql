@@ -20,7 +20,6 @@ CREATE TABLE roles (
     modified_by BIGSERIAL
 );
 
-
 -- 게시판 카테고리 테이블
 CREATE TABLE board_categories (
     category_id BIGSERIAL PRIMARY KEY,
@@ -59,51 +58,22 @@ CREATE TABLE oauth_accounts (
 -- 교회 성도 정보 테이블
 CREATE TABLE members (
     id BIGSERIAL PRIMARY KEY,
-    user_id BIGSERIAL NOT NULL REFERENCES users(id) UNIQUE,
+    user_id BIGSERIAL REFERENCES users(id),
     name VARCHAR(50) NOT NULL,
     birthdate DATE,
-    gender VARCHAR(10), -- MALE, FEMALE
+    gender VARCHAR(10),
     address TEXT,
     phone_number VARCHAR(20),
     picture TEXT, -- Oauth 프로필
     nickname VARCHAR(50),
     is_deleted BOOLEAN DEFAULT FALSE,
+    role VARCHAR(50) NOT NULL DEFAULT 'GUEST',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGSERIAL,
     modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     modified_by BIGSERIAL,
     registered_by_user_id BIGSERIAL REFERENCES users(id) -- 등록한 관리자/리더 ID
     -- 기타 필요한 정보 (세례명, 직분 등)
-);
-
--- 성도-부서 소속 정보 테이블
-CREATE TABLE member_departments (
-    member_id BIGSERIAL NOT NULL REFERENCES members(id),
-    department_id BIGSERIAL NOT NULL REFERENCES departments(id),
-    start_date DATE DEFAULT CURRENT_DATE,
-    end_date DATE, -- 부서 이동 시 기록
-    is_deleted BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGSERIAL,
-    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_by BIGSERIAL,
-    PRIMARY KEY (member_id, department_id)
-);
-
--- 사용자의 부서 내 역할 테이블
-CREATE TABLE user_department_roles (
-    user_id BIGSERIAL NOT NULL REFERENCES users(id),
-    department_id BIGSERIAL NOT NULL REFERENCES departments(id),
-    department_name VARCHAR(100) NOT NULL,
-    role_id BIGSERIAL NOT NULL REFERENCES roles(id),
-    role_name VARCHAR(100) NOT NULL, -- 예: 교사, 리더, 성도, 부장, 목사
-    assignment_date DATE DEFAULT CURRENT_DATE,
-    is_deleted BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by BIGSERIAL,
-    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    modified_by BIGSERIAL,
-    PRIMARY KEY (user_id, department_id, role_id)
 );
 
 -- 출석 정보 테이블
@@ -136,6 +106,37 @@ CREATE TABLE family_relations (
     modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     modified_by BIGSERIAL,
     UNIQUE (member1_id, member2_id, relationship_type)
+);
+
+CREATE TABLE groups (
+    group_id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL, -- 그룹 이름 (예: '유년부', '마을', '1교구')
+    group_type VARCHAR(50) NOT NULL, -- 그룹 유형 (예: 'Department', 'Class', 'Parish', 'Village', 'SmallGroup', 'Team')
+    -- 어떤 유형들이 있는지 명확히 정의하고 사용하는 것이 중요합니다.
+    parent_group_id BIGSERIAL REFERENCES groups(group_id) ON DELETE SET NULL, -- 상위 그룹 ID (최상위 그룹은 NULL)
+    -- 상위 그룹 삭제 시 하위 그룹의 연결을 끊음 (NULL로 설정)
+    leader_person_id BIGSERIAL REFERENCES members(id) ON DELETE SET NULL, -- 그룹 리더/교사/담당자의 members 테이블 ID
+    -- 리더로 지정된 멤버 삭제 시 그룹의 리더 정보를 NULL로 설정
+    description TEXT NULL, -- 그룹 설명
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGSERIAL,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by BIGSERIAL
+);
+
+CREATE TABLE Membership (
+    membership_id BIGSERIAL PRIMARY KEY,
+    person_id BIGSERIAL NOT NULL REFERENCES members(id) ON DELETE CASCADE, -- 소속된 사람의 members 테이블 ID
+    -- 멤버 삭제 시 해당 멤버의 모든 멤버십 기록도 함께 삭제
+    group_id BIGSERIAL NOT NULL REFERENCES groups(group_id) ON DELETE CASCADE, -- 소속된 그룹의 Groups 테이블 ID
+    -- 그룹 삭제 시 해당 그룹에 속한 모든 멤버십 기록도 함께 삭제
+    role VARCHAR(100) NOT NULL, -- 그룹 내에서의 역할 (예: 'Student', 'Teacher', 'Member', 'Leader', 'Assistant')
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGSERIAL,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by BIGSERIAL
 );
 
 -- 게시글 테이블
@@ -185,8 +186,6 @@ CREATE TABLE post_likes (
     ON DELETE CASCADE                   -- 게시글이 삭제되면 좋아요 기록도 삭제
 );
 
-
-
 -- 댓글 테이블
 CREATE TABLE comments (
     comment_id BIGSERIAL PRIMARY KEY,
@@ -220,6 +219,10 @@ CREATE TABLE files (
 );
 
 --- 인덱스 ---
+-- groups 테이블
+CREATE INDEX idx_groups_parent_group_id ON groups(parent_group_id);
+CREATE INDEX idx_groups_leader_person_id ON groups(leader_person_id);
+CREATE INDEX idx_groups_group_type ON groups(group_type);
 
 -- oauth_accounts 테이블
 CREATE INDEX idx_oauth_accounts_user_id ON oauth_accounts(user_id);
@@ -231,15 +234,6 @@ CREATE INDEX idx_members_name ON members(name);
 CREATE INDEX idx_members_nickname ON members(nickname);
 CREATE INDEX idx_members_is_deleted ON members(is_deleted);
 CREATE INDEX idx_members_registered_by_user_id ON members(registered_by_user_id);
-
--- member_departments 테이블
-CREATE INDEX idx_member_departments_department_id ON member_departments(department_id);
-CREATE INDEX idx_member_departments_is_deleted ON member_departments(is_deleted);
-
--- user_department_roles 테이블
-CREATE INDEX idx_user_department_roles_department_id ON user_department_roles(department_id);
-CREATE INDEX idx_user_department_roles_role_id ON user_department_roles(role_id);
-CREATE INDEX idx_user_department_roles_is_deleted ON user_department_roles(is_deleted);
 
 -- attendance 테이블
 CREATE INDEX idx_attendance_department_id ON attendance(department_id);
@@ -347,25 +341,6 @@ VALUES
     (4, '김관리', '1990-01-01', 'MALE', '서울시 마포구', '010-5555-6666', '관리자킴', 1, 1, 1),
     (5, '김아이', '2025-01-01', 'MALE', '서울시 노원구', '010-6666-7777', '김칠드런', 1, 1, 1)
 ON CONFLICT (id) DO NOTHING;
-
--- 7. 성도-부서 소속 (member_departments) - 업데이트된 부서 ID 사용
-INSERT INTO member_departments (member_id, department_id, start_date, created_by, modified_by)
-VALUES
-    (1, 8, '2023-01-10', 1, 1), -- 홍길동 -> 청년부 (ID: 8)
-    (2, 8, '2023-02-15', 1, 1), -- 성춘향 -> 청년부 (ID: 8)
-    (3, 10, '2022-05-01', 1, 1) -- 이몽룡 -> 장년부 (ID: 10)
-ON CONFLICT (member_id, department_id) DO NOTHING;
-
--- 8. 사용자의 부서 내 역할 (user_department_roles) - 업데이트된 부서 ID 및 이름 사용
-INSERT INTO user_department_roles (user_id, department_id, department_name, role_id, role_name, assignment_date, created_by, modified_by)
-VALUES
-    (1, 8, '청년부', 1, '리더', '2023-01-10', 1, 1),       -- 홍길동(1) -> 청년부 리더
-    (2, 8, '청년부', 3, '성도', '2023-02-15', 1, 1),       -- 성춘향(2) -> 청년부 성도
-    (3, 10, '장년부', 2, '교사', '2022-05-01', 1, 1),       -- 이몽룡(3) -> 장년부 교사
-    (1, 3, '영아부', 2, '교사', '2024-01-01', 1, 1),       -- 홍길동(1) -> 유년부 교사
-    (1, 3, '영아부', 2, '교사', '2024-01-01', 1, 1),       -- 홍길동(1) -> 유년부 교
-    (4, 10, '장년부', 1, '리더', '2021-11-01', 1, 1)        -- 김관리(4) -> 장년부 리더
-ON CONFLICT (user_id, department_id, role_id) DO NOTHING;
 
 -- 9. 출석 정보 (attendance) - 업데이트된 부서 ID 사용
 INSERT INTO attendance (member_id, department_id, attendance_date, status, check_in_time, checked_by_user_id, method, created_by, modified_by)

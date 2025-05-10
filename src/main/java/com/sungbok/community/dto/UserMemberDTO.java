@@ -1,5 +1,6 @@
 package com.sungbok.community.dto;
 
+import com.sungbok.community.enums.UserRole;
 import lombok.Builder;
 import lombok.Getter;
 import org.jooq.generated.tables.pojos.Members;
@@ -8,7 +9,6 @@ import org.jooq.generated.tables.pojos.Users;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.List;
 
 @Getter
 public class UserMemberDTO implements Serializable {
@@ -36,10 +36,10 @@ public class UserMemberDTO implements Serializable {
 
   private final Long registeredByUserId;
 
-  private final List<DepartmentRoleInfo> userDeptRoles;
+  private final UserRole role;
 
   @Builder
-  public UserMemberDTO(Users user, Members member, List<DepartmentRoleInfo> userDeptRoles) {
+  public UserMemberDTO(Users user, Members member, UserRole role) {
     this.userId = user.getId();
     this.email = user.getEmail();
     this.password = user.getPassword();
@@ -49,14 +49,14 @@ public class UserMemberDTO implements Serializable {
     this.address = member.getAddress();
     this.phoneNumber = member.getPhoneNumber();
     this.picture = member.getPicture();
-    this.userDeptRoles = userDeptRoles;
+    this.role = role;
     this.registeredByUserId = getRegisteredByUserId();
   }
 
   public UserMemberDTO(
           Long userId, String email, String name, String password, LocalDate birthdate,
           String gender, String address, String phoneNumber, String picture,
-          Long registeredByUserId, List<DepartmentRoleInfo> userDeptRoles) { // Added list parameter
+          Long registeredByUserId, UserRole role) {
     this.userId = userId;
     this.email = email;
     this.name = name;
@@ -67,14 +67,13 @@ public class UserMemberDTO implements Serializable {
     this.phoneNumber = phoneNumber;
     this.picture = picture;
     this.registeredByUserId = registeredByUserId;
-    this.userDeptRoles = userDeptRoles;
+    this.role = role;
   }
 
-  public static UserMemberDTO of(Users user, Members member, List<DepartmentRoleInfo> userDeptRoles) {
+  public static UserMemberDTO of(Users user, Members member) {
     return UserMemberDTO.builder()
             .user(user)
             .member(member)
-            .userDeptRoles(userDeptRoles)
             .build();
   }
 

@@ -1,9 +1,7 @@
 package com.sungbok.community.security.model;
 
-import com.sungbok.community.dto.DepartmentRoleInfo;
 import com.sungbok.community.dto.UserMemberDTO;
 import lombok.Getter;
-import org.jooq.generated.tables.pojos.UserDepartmentRoles;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,7 +10,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 @Getter
@@ -36,24 +33,9 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
   }
 
   //권한을 리턴
-  @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
     Collection<GrantedAuthority> authorities = new ArrayList<>();
-    List<DepartmentRoleInfo> roles = user.getUserDeptRoles();
-
-    if (roles != null) { // Null check for safety
-      for (DepartmentRoleInfo role : roles) {
-        // 역할 이름 앞에 "ROLE_" 접두사를 붙여서 권한 생성 (일반적인 방식)
-        // 또는 필요에 따라 departmentName + roleName 조합 등 다른 방식으로 권한 문자열 생성 가능
-        if (role != null && role.getRoleName() != null && !role.getRoleName().isEmpty()) {
-          authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getRoleName()));
-          // 예: 부서명까지 포함하려면 -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getDepartmentName() + "_" + role.getRoleName()));
-        }
-      }
-    }
-    // 기본 권한 추가 (선택 사항)
-     authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
-
+    authorities.add(new SimpleGrantedAuthority(user.getRole().getCode()));
     return authorities;
   }
 

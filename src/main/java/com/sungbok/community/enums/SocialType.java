@@ -7,23 +7,21 @@ import java.util.Arrays;
 
 @Getter
 public enum SocialType {
-    GOOGLE("GOOGLE","구글"),
-    KAKAO("KAKAO", "카카오"),
-    NAVER("NAVER", "네이버");
+    GOOGLE("GOOGLE"),
+    KAKAO("KAKAO"),
+    NAVER("NAVER");
 
-    private final String value;
-    private final String roleName;
+    private final String code;
 
-    SocialType(String value, String roleName) {
-        this.value = value;
-        this.roleName = roleName;
+    SocialType(String code) {
+        this.code = code;
     }
 
-    public static SocialType ofCode(String roleName) {
+    public static SocialType findByCode(String code) {
         return Arrays.stream(values())
-                .filter(v -> v.roleName.equals(roleName))
+                .filter(v -> v.code.equalsIgnoreCase(code))
                 .findFirst()
-                .orElseThrow(() -> new DataNotFoundException(String.format("No matching constant for [%s]", roleName)));
+                .orElseThrow(() -> new DataNotFoundException(String.format("No matching constant for [%s]", code)));
     }
 }
 

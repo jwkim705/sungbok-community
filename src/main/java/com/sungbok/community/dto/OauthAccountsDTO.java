@@ -25,7 +25,7 @@ public class OauthAccountsDTO implements Serializable {
     public OauthAccountsDTO(OauthAccounts oauthAccounts, Users user){
         this.id = oauthAccounts.getId();
         this.userId = user.getId();
-        this.socialType = SocialType.ofCode(oauthAccounts.getSocialType());
+        this.socialType = SocialType.findByCode(oauthAccounts.getSocialType());
     }
 
     public static OauthAccountsDTO of(OauthAccounts oauthAccounts) {
