@@ -4,8 +4,9 @@ import com.sungbok.community.common.exception.AlreadyExistException;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.repository.member.MembersRepository;
-import com.sungbok.community.repository.users.UserRepository;
+import com.sungbok.community.enums.UserRole;
+import com.sungbok.community.repository.MembersRepository;
+import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.service.change.ChangeUserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +40,7 @@ public class ChangeUserServiceImpl implements ChangeUserService {
         return UserMemberDTO.builder()
                 .user(user)
                 .member(member)
+                .role(UserRole.findByCode(member.getRole()))
                 .build();
     }
 
@@ -101,5 +103,10 @@ public class ChangeUserServiceImpl implements ChangeUserService {
 
         return userRepository.findUserWithDetailsById(finalUserId)
              .orElseThrow(() -> new RuntimeException("Failed to fetch final user/member state after save/update for ID: " + finalUserId));
+    }
+
+    @Override
+    public void deleteUser(Long userId) {
+        userRepository.deleteUser(userId);
     }
 }

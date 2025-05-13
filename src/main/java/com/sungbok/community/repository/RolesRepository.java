@@ -1,4 +1,4 @@
-package com.sungbok.community.repository.rolesRepository;
+package com.sungbok.community.repository;
 
 import org.jooq.Configuration;
 import org.jooq.generated.tables.daos.RolesDao;

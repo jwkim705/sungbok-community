@@ -1,4 +1,4 @@
-package com.sungbok.community.repository.member;
+package com.sungbok.community.repository;
 
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.enums.UserRole;

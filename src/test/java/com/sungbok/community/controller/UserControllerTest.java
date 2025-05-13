@@ -3,7 +3,8 @@ package com.sungbok.community.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.repository.users.UserRepository;
+import com.sungbok.community.enums.UserRole;
+import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.service.change.ChangeUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -103,7 +104,7 @@ class UserControllerTest {
                 requestDTO.getPhoneNumber(),
                 null, // picture (테스트에 필요 없다면 null)
                 null, // registeredByUserId (테스트에 필요 없다면 null)
-                Collections.emptyList() // userDeptRoles (테스트에 필요 없다면 빈 리스트)
+                UserRole.USER
         );
 
         doReturn(mockedServiceResponse)

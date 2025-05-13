@@ -70,10 +70,11 @@ public class UserMemberDTO implements Serializable {
     this.role = role;
   }
 
-  public static UserMemberDTO of(Users user, Members member) {
+  public static UserMemberDTO of(Users user, Members member, UserRole role) {
     return UserMemberDTO.builder()
             .user(user)
             .member(member)
+            .role(role)
             .build();
   }
 

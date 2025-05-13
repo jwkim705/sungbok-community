@@ -11,4 +11,6 @@ public interface ChangeUserService {
 
     UserMemberDTO saveOrUpdateUser(UpdateUserWithMember updateReq);
 
+    void deleteUser(Long userId);
+
 }

@@ -1,7 +1,7 @@
 package com.sungbok.community.security.service.impl;
 
 import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.repository.users.UserRepository;
+import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.security.model.PrincipalDetails;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

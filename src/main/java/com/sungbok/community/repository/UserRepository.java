@@ -1,4 +1,4 @@
-package com.sungbok.community.repository.users;
+package com.sungbok.community.repository;
 
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UserMemberDTO;
@@ -130,6 +130,10 @@ public class UserRepository {
                 .join(MEMBERS).on(MEMBERS.USER_ID.eq(USERS.ID))
                 .where(USERS.EMAIL.eq(email))
                 .fetchOneInto(UserMemberDTO.class);
+    }
+
+    public void deleteUser(Long userId) {
+      dao.deleteById(userId);
     }
 
 }

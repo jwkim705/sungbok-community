@@ -1,8 +1,8 @@
 package com.sungbok.community.service.get.impl;
 
 import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.repository.member.MembersRepository;
-import com.sungbok.community.repository.users.UserRepository;
+import com.sungbok.community.repository.MembersRepository;
+import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.service.get.GetUserService;
 import lombok.RequiredArgsConstructor;
 import org.jooq.generated.tables.pojos.Users;
