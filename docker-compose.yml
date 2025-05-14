@@ -9,7 +9,7 @@ services:
     volumes:
       - valkey_data:/valkey
     ports:
-      - "6380:6379"
+      - "6379:6379"
     networks:
       - valkey-network
     restart: always

@@ -23,7 +23,7 @@ CREATE TABLE roles (
 -- 게시판 카테고리 테이블
 CREATE TABLE board_categories (
     category_id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE, -- 예 : 자유게시판, 유튜브 공유, SNS
+    name VARCHAR(100) NOT NULL UNIQUE, -- 예 : FREE, YOUTUBE, SNS
     description TEXT, -- 카테고리 설명
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGSERIAL,
@@ -142,8 +142,10 @@ CREATE TABLE Membership (
 -- 게시글 테이블
 CREATE TABLE posts (
     post_id BIGSERIAL PRIMARY KEY,
-    category_id BIGSERIAL NOT NULL REFERENCES board_categories(category_id),
+    category_nm VARCHAR(100) NOT NULL,
     user_id BIGSERIAL NOT NULL REFERENCES users(id), -- 수정됨
+    user_nm VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     content TEXT,
     view_count INT DEFAULT 0 NOT NULL,
@@ -191,6 +193,8 @@ CREATE TABLE comments (
     comment_id BIGSERIAL PRIMARY KEY,
     post_id BIGSERIAL NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE,
     user_id BIGSERIAL NOT NULL REFERENCES users(id), -- 수정됨
+    user_nm VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL,
     parent_comment_id BIGSERIAL REFERENCES comments(comment_id) ON DELETE CASCADE,
     content TEXT NOT NULL,
     is_deleted BOOLEAN DEFAULT FALSE,
@@ -248,7 +252,7 @@ CREATE INDEX idx_family_relations_relationship_type ON family_relations(relation
 CREATE INDEX idx_family_relations_is_deleted ON family_relations(is_deleted);
 
 -- posts 테이블 (테이블명 변경됨)
-CREATE INDEX idx_posts_category_id ON posts(category_id);
+CREATE INDEX idx_posts_category_nm ON posts(category_nm);
 CREATE INDEX idx_posts_user_id ON posts(user_id);
 CREATE INDEX idx_posts_created_at ON posts(created_at DESC);
 CREATE INDEX idx_posts_view_count ON posts(view_count DESC);
@@ -310,9 +314,9 @@ ON CONFLICT (id) DO NOTHING;
 -- 3. 게시판 카테고리 (board_categories)
 INSERT INTO board_categories (name, description, created_by, modified_by)
 VALUES
-    ('자유게시판', '자유롭게 글을 작성하는 게시판입니다.', 1, 1),
-    ('공지사항', '교회 공지사항 게시판입니다.', 1, 1),
-    ('찬양팀 악보', '찬양팀 악보 공유 게시판입니다.', 1, 1)
+    ('FREE', '자유롭게 글을 작성하는 게시판입니다.', 1, 1),
+    ('NOTICE', '교회 공지사항 게시판입니다.', 1, 1),
+    ('COMMUNITY_FEED', 'SNS 피드 게시판입니다.', 1, 1)
 ON CONFLICT (category_id) DO NOTHING;
 
 -- 4. 사용자 (users) - 여러 명 생성
@@ -359,11 +363,11 @@ VALUES
 ON CONFLICT (member1_id, member2_id, relationship_type) DO NOTHING;
 
 -- 11. 게시글 (posts) - 여러 개 작성
-INSERT INTO posts (category_id, user_id, title, content, created_by, modified_by)
+INSERT INTO posts (category_nm, user_id, user_nm, email, title, content, created_by, modified_by)
 VALUES
-    (1, 1, '첫 번째 자유게시글', '자유게시판 내용입니다.', 1, 1),
-    (2, 4, '교회 대청소 안내', '5월 첫째 주 토요일 대청소를 진행합니다.', 4, 4),
-    (3, 1, '새 찬양 악보 공유', '이번 주 찬양팀 악보입니다.', 1, 1)
+    ('FREE', 1, '홍길동','admin@example.com','첫 번째 자유게시글', '자유게시판 내용입니다.', 1, 1),
+    ('NOTICE', 4, '김관리','leader2@example.com','교회 대청소 안내', '5월 첫째 주 토요일 대청소를 진행합니다.', 4, 4),
+    ('COMMUNITY_FEED', 1, '홍길동','admin@example.com','피드 게시판 공유', '피드 게시판 첫 글입니다.', 1, 1)
 ON CONFLICT (post_id) DO NOTHING;
 
 -- 12. 게시글-유튜브 (post_youtube) - 게시글 3에 연결
@@ -372,16 +376,16 @@ VALUES (3, 'abcdef12345', 1, 1) -- Example YouTube video ID
 ON CONFLICT (post_id, youtube_video_id) DO NOTHING;
 
 -- 13. 댓글 (comments) - 여러 댓글, 대댓글 포함
-INSERT INTO comments (post_id, user_id, content, created_by, modified_by)
+INSERT INTO comments (post_id, user_id, user_nm, email, content, created_by, modified_by)
 VALUES
-    (1, 2, '좋은 글 감사합니다!', 2, 2),         -- 성춘향 -> 게시글 1 댓글
-    (2, 3, '확인했습니다. 참석하겠습니다.', 3, 3), -- 이몽룡 -> 게시글 2 댓글
-    (1, 3, '저도 잘 읽었습니다.', 3, 3)          -- 이몽룡 -> 게시글 1 댓글
+    (1, 2, '성춘향', 'member1@example.com','좋은 글 감사합니다!', 2, 2),         -- 성춘향 -> 게시글 1 댓글
+    (2, 3, '이몽룡','member2@example.com','확인했습니다. 참석하겠습니다.', 3, 3), -- 이몽룡 -> 게시글 2 댓글
+    (1, 3, '이몽룡', 'member2@example.com','저도 잘 읽었습니다.', 3, 3)          -- 이몽룡 -> 게시글 1 댓글
 ON CONFLICT (comment_id) DO NOTHING;
 
 -- 대댓글 예시 (댓글 1에 대한 대댓글)
-INSERT INTO comments (post_id, user_id, parent_comment_id, content, created_by, modified_by)
-VALUES (1, 1, 1, '읽어주셔서 감사합니다!', 1, 1) -- 홍길동 -> 댓글 1 (성춘향)에 대한 대댓글
+INSERT INTO comments (post_id, user_id, user_nm, email, parent_comment_id, content, created_by, modified_by)
+VALUES (1, 1, '홍길동','admin@example.com',1,'읽어주셔서 감사합니다!', 1, 1) -- 홍길동 -> 댓글 1 (성춘향)에 대한 대댓글
 ON CONFLICT (comment_id) DO NOTHING;
 
 -- 14. 파일 (files) - 게시글 2 (공지사항)에 파일 첨부

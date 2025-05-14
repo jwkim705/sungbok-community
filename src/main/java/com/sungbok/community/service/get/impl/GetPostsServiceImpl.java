@@ -1,18 +1,16 @@
 package com.sungbok.community.service.get.impl;
 
 import com.sungbok.community.dto.GetPostResponseDTO;
-import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.repository.MembersRepository;
+import com.sungbok.community.dto.GetPostsPageResponseDTO;
+import com.sungbok.community.dto.PostSearchVO;
 import com.sungbok.community.repository.PostsRepository;
-import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.service.get.GetPostsService;
-import com.sungbok.community.service.get.GetUserService;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.jooq.generated.tables.pojos.Users;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -21,17 +19,31 @@ public class GetPostsServiceImpl implements GetPostsService {
 
     private final PostsRepository postsRepository;
 
-
     @Override
-    public Page<GetPostResponseDTO> getPostList(Pageable pageable) {
-        return null;
+    public GetPostsPageResponseDTO getPostList(PostSearchVO searchVO) {
+
+        //카테고리 체크
+
+        return postsRepository.findAllPosts(searchVO);
     }
 
     @Override
+    @Transactional
     public GetPostResponseDTO getPostById(Long postId, Long userId) {
-        return null;
+        // 조회수 증가 (조회하는 사용자가 게시글 작성자가 아닌 경우에만)
+        GetPostResponseDTO post = postsRepository.findPostById(postId);
+        
+        if (Objects.isNull(post)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다.");
+        }
+        
+        // 자신의 게시글이 아닌 경우에만 조회수 증가
+        if (!post.getUserId().equals(userId)) {
+            postsRepository.increaseViewCount(postId);
+            // 증가된 조회수를 반영
+            post.viewCount();
+        }
+        
+        return post;
     }
-
-
-
 }

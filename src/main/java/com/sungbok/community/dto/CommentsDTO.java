@@ -1,5 +1,6 @@
 package com.sungbok.community.dto;
 
+import com.sungbok.community.common.vo.CommonVO;
 import lombok.*;
 
 import java.io.Serial;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CommentsDTO implements Serializable {
+public class CommentsDTO extends CommonVO {
 
     @Serial
     private static final long serialVersionUID = -6185912561538892793L;
@@ -28,10 +29,5 @@ public class CommentsDTO implements Serializable {
     private Long parentCommentId;
 
     private boolean isDeleted;
-
-    private LocalDateTime createdAt;
-    private Long createdBy;
-    private LocalDateTime modifiedAt;
-    private Long modifiedBy;
 
 }

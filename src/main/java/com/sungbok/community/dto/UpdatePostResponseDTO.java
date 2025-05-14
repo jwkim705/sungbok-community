@@ -1,14 +1,13 @@
 package com.sungbok.community.dto;
 
+import java.io.Serial;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Getter
 @Accessors(chain = true)
@@ -25,8 +24,6 @@ public class UpdatePostResponseDTO implements Serializable {
     private String title;
 
     private String content;
-
-    private String categoryId;
 
     private String categoryNm;
 
@@ -45,5 +42,23 @@ public class UpdatePostResponseDTO implements Serializable {
     private LocalDateTime modifiedAt;
 
     private long modifiedBy;
+
+    public static UpdatePostResponseDTO of(GetPostResponseDTO post) {
+        return UpdatePostResponseDTO
+                .builder()
+                .postId(post.getPostId())
+                .title(post.getTitle())
+                .content(post.getContent())
+                .categoryNm(post.getCategoryNm())
+                .userId(post.getUserId())
+                .viewCount(post.getViewCount())
+                .likeCount(post.getLikeCount())
+                .isDeleted(post.isDeleted())
+                .createdAt(post.getCreatedAt())
+                .createdBy(post.getCreatedBy())
+                .modifiedAt(post.getModifiedAt())
+                .modifiedBy(post.getModifiedBy())
+                .build();
+    }
 
 }
