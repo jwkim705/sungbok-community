@@ -6,6 +6,7 @@ services:
     container_name: spring-sungbok-back-green
     environment:
       - TZ=Asia/Seoul
+      - SPRING_PROFILES_ACTIVE=prod
     ports:
       - "8112:8080"
     networks:
