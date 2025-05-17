@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   valkey:
     container_name: valkey
@@ -26,6 +24,8 @@ services:
     ports:
       - "5432:5432"
     restart: always
+    networks:
+      - servernetwork
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -37,6 +37,8 @@ services:
       - "5050:80"
     depends_on:
       - postgres
+    networks:
+      - servernetwork
 
   jenkins:
     container_name: jenkins
@@ -51,17 +53,19 @@ services:
     ports:
       - "9090:8080"
       - "50000:50000"
+    networks:
+      - servernetwork
 
   redisinsight:
     image: redis/redisinsight:latest
     container_name: simple-redisinsight
     ports:
         - 5540:5540
-    networks:
-      - servernetwork
     depends_on:
       - valkey
     restart: always
+    networks:
+      - servernetwork
 
 networks:
   servernetwork:

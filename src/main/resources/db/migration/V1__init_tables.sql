@@ -124,7 +124,7 @@ CREATE TABLE groups (
     modified_by BIGSERIAL
 );
 
-CREATE TABLE Membership (
+CREATE TABLE membership (
     membership_id BIGSERIAL PRIMARY KEY,
     person_id BIGSERIAL NOT NULL REFERENCES members(id) ON DELETE CASCADE, -- 소속된 사람의 members 테이블 ID
     -- 멤버 삭제 시 해당 멤버의 모든 멤버십 기록도 함께 삭제
