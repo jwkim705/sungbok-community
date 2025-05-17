@@ -2,6 +2,9 @@ pipeline{
     agent any
     environment {
         SCRIPT_PATH = '/var/jenkins_home/custom/sungbok'
+        DB_URL = 'jdbc:postgresql://postgres:5432/community' // PostgreSQL 컨테이너 이름 사용
+        POSTGRES_USER = 'sungbok'
+        POSTGRES_PASSWORD = credentials('POSTGRES_PASSWORD') // Jenkins Credential ID 사용 권장
     }
     tools {
         gradle 'gradle8.14'
