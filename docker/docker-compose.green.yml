@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ..
+    container_name: spring-sungbok-back-green
+    environment:
+      - TZ=Asia/Seoul
+    ports:
+      - "8112:8080"
+    networks:
+      - servernetwork
+
+networks:
+  servernetwork:
+    external: true
+    driver: bridge

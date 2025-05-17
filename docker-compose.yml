@@ -11,7 +11,7 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - valkey-network
+      - servernetwork
     restart: always
 
   postgres:
@@ -40,13 +40,14 @@ services:
 
   jenkins:
     container_name: jenkins
-    image: jenkins/jenkins:lts-jdk21
+    image: jenkins-custom
     environment:
       - TZ=Asia/Seoul
+      - JAVA_OPS=-Xmx4g
     user: root
     volumes:
-      - jenkins_data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+      - /volume1/docker/jenkins:/var/jenkins_home
     ports:
       - "9090:8080"
       - "50000:50000"
@@ -57,13 +58,14 @@ services:
     ports:
         - 5540:5540
     networks:
-      - valkey-network
+      - servernetwork
     depends_on:
       - valkey
     restart: always
 
 networks:
-  valkey-network:
+  servernetwork:
+    external: true
     driver: bridge
 volumes:
   valkey_data:
