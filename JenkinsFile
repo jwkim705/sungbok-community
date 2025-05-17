@@ -4,7 +4,7 @@ pipeline{
         SCRIPT_PATH = '/var/jenkins_home/custom/sungbok'
     }
     tools {
-        gradle 'gradle 8.14'
+        gradle 'gradle8.14'
     }
     stages{
         stage('Checkout') {
