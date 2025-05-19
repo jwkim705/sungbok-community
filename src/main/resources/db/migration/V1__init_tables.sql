@@ -21,7 +21,7 @@ CREATE TABLE roles (
 );
 
 -- 게시판 카테고리 테이블
-CREATE TABLE board_categories (
+CREATE TABLE posts_categories (
     category_id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE, -- 예 : FREE, YOUTUBE, SNS
     description TEXT, -- 카테고리 설명
@@ -142,6 +142,7 @@ CREATE TABLE membership (
 -- 게시글 테이블
 CREATE TABLE posts (
     post_id BIGSERIAL PRIMARY KEY,
+    table_type VARCHAR(50) NOT NULL, -- (홈페이지,관리자,커뮤니티)
     category_nm VARCHAR(100) NOT NULL,
     user_id BIGSERIAL NOT NULL REFERENCES users(id), -- 수정됨
     user_nm VARCHAR(50) NOT NULL,
@@ -311,8 +312,8 @@ values
     ('찬양팀', '찬양팀 역할입니다.', 1, 1)
 ON CONFLICT (id) DO NOTHING;
 
--- 3. 게시판 카테고리 (board_categories)
-INSERT INTO board_categories (name, description, created_by, modified_by)
+-- 3. 게시판 카테고리 (posts_categories)
+INSERT INTO posts_categories (name, description, created_by, modified_by)
 VALUES
     ('FREE', '자유롭게 글을 작성하는 게시판입니다.', 1, 1),
     ('NOTICE', '교회 공지사항 게시판입니다.', 1, 1),

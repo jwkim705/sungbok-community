@@ -1,6 +1,7 @@
 package com.sungbok.community.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sungbok.community.common.constant.UriConstant;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.enums.UserRole;
@@ -111,7 +112,7 @@ class UserControllerTest {
                 .when(changeUserService).signup(any(AddUserRequestDTO.class));
 
         ResultActions resultActions = mockMvc.perform(
-            MockMvcRequestBuilders.post("/user/signup")
+            MockMvcRequestBuilders.post(UriConstant.USERS+"/signup")
                 .content(objectMapper.writeValueAsString(requestDTO))
                 .contentType(MediaType.APPLICATION_JSON_VALUE));
 
