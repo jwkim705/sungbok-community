@@ -32,10 +32,10 @@ public class PageRequestVO extends AbstractObject{
 
   public void validate() {
       if (page < 1) {
-          throw new IllegalArgumentException("Page index must not be less than zero!");
+          page = 1;
       }
       if (size < 1) {
-          throw new IllegalArgumentException("Page size must not be less than one!");
+          size = 10;
       }
       if (size > 100) {
           throw new IllegalArgumentException("Page size must not be greater than 100!");
