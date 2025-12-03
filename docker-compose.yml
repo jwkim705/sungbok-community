@@ -42,7 +42,7 @@ services:
 
   jenkins:
     container_name: jenkins
-    image: jenkins-custom
+    image: jenkins/agent:latest-jdk25
     environment:
       - TZ=Asia/Seoul
       - JAVA_OPS=-Xmx4g
@@ -69,7 +69,6 @@ services:
 
 networks:
   servernetwork:
-    external: true
     driver: bridge
 volumes:
   valkey_data:

@@ -1,6 +1,7 @@
 package com.sungbok.community.controller;
 
 import com.sungbok.community.common.constant.UriConstant;
+import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.dto.AddPostRequestDTO;
 import com.sungbok.community.dto.AddPostResponseDTO;
 import com.sungbok.community.dto.GetPostResponseDTO;
@@ -9,11 +10,12 @@ import com.sungbok.community.dto.PostSearchVO;
 import com.sungbok.community.dto.UpdatePostRequestDTO;
 import com.sungbok.community.dto.UpdatePostResponseDTO;
 import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.security.model.PrincipalDetails;
 import com.sungbok.community.service.change.ChangePostService;
 import com.sungbok.community.service.get.GetPostsService;
+import com.sungbok.community.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -35,44 +37,40 @@ public class PostController {
     private final ChangePostService changePostService;
 
     @GetMapping
-    public ResponseEntity<GetPostsPageResponseDTO> getPostList(PostSearchVO searchVO) {
+    public ResponseEntity<@NonNull GetPostsPageResponseDTO> getPostList(PostSearchVO searchVO) {
         searchVO.validate();
         return ResponseEntity.ok(getPostsService.getPostList(searchVO));
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<GetPostResponseDTO> getPostById(@PathVariable("postId") Long postId,
+    public ResponseEntity<@NonNull GetPostResponseDTO> getPostById(@PathVariable("postId") Long postId,
         Authentication authentication) {
-        PrincipalDetails principalDetails =  (PrincipalDetails) authentication.getPrincipal();
-        UserMemberDTO user = principalDetails.getUser();
-        return ResponseEntity.ok(getPostsService.getPostById(postId,user.getUserId()));
+        UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
+        return ResponseEntity.ok(getPostsService.getPostById(postId, user.getUserId()));
     }
 
     @PutMapping
-    public ResponseEntity<AddPostResponseDTO> addPost(@RequestBody @Valid AddPostRequestDTO addPostRequest,
+    public ResponseEntity<@NonNull AddPostResponseDTO> addPost(@RequestBody @Valid AddPostRequestDTO addPostRequest,
                                                          Authentication authentication) {
-        PrincipalDetails principalDetails =  (PrincipalDetails) authentication.getPrincipal();
-        UserMemberDTO user = principalDetails.getUser();
+        UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(changePostService.addPost(addPostRequest, user.getUserId()));
     }
 
     @PatchMapping("/{postId}")
-    public ResponseEntity<UpdatePostResponseDTO> updatePost(
+    public ResponseEntity<@NonNull UpdatePostResponseDTO> updatePost(
             @RequestBody @Valid UpdatePostRequestDTO updatePostRequest,
             @PathVariable("postId") Long postId,
             Authentication authentication) {
-        PrincipalDetails principalDetails =  (PrincipalDetails) authentication.getPrincipal();
-        UserMemberDTO user = principalDetails.getUser();
+        UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         return ResponseEntity.ok(changePostService.updatePost(postId, updatePostRequest, user.getUserId()));
     }
 
     @DeleteMapping("/{postId}")
-    public ResponseEntity<Void> deletePost(@PathVariable("postId") Long postId,
+    public ResponseEntity<@NonNull OkResponseDTO> deletePost(@PathVariable("postId") Long postId,
                                           Authentication authentication) {
-        PrincipalDetails principalDetails =  (PrincipalDetails) authentication.getPrincipal();
-        UserMemberDTO user = principalDetails.getUser();
+        UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         changePostService.deletePost(postId, user.getUserId());
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(OkResponseDTO.deleted("Post", 1));
     }
 }

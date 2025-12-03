@@ -6,6 +6,7 @@ import java.io.Serializable;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 
 @Getter
 @Setter
@@ -19,10 +20,10 @@ public class ErrorResponseDTO implements Serializable {
   private int code;
 
   @Schema(description = "Error Message")
-  private String message;
+  private @Nullable String message;
 
   @Schema(description = "Error Item")
-  private Object errors;
+  private @Nullable Object errors;
 
   private ErrorResponseDTO(int code) {
     this.code = code;

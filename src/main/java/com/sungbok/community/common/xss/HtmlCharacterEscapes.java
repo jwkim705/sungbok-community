@@ -1,8 +1,8 @@
 package com.sungbok.community.common.xss;
 
-import com.fasterxml.jackson.core.SerializableString;
-import com.fasterxml.jackson.core.io.CharacterEscapes;
-import com.fasterxml.jackson.core.io.SerializedString;
+import tools.jackson.core.SerializableString;
+import tools.jackson.core.io.CharacterEscapes;
+import tools.jackson.core.io.SerializedString;
 import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.Serial;

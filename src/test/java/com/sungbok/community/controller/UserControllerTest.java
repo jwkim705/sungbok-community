@@ -1,21 +1,28 @@
 package com.sungbok.community.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.sungbok.community.common.constant.UriConstant;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.enums.UserRole;
 import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.service.change.ChangeUserService;
+import java.time.LocalDate;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
@@ -24,20 +31,10 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@AutoConfigureRestDocs
 @ActiveProfiles("test")
 class UserControllerTest {
 
@@ -61,7 +58,13 @@ class UserControllerTest {
     @Test
     @DisplayName("회원 ID로 회원 정보조회")
     void findUserWithDetailsById() {
-        UserMemberDTO dto = userRepository.findUserWithDetailsById(1L).get();
+        Optional<UserMemberDTO> oDto = userRepository.findUserWithDetailsById(1L);
+
+        UserMemberDTO dto = null;
+
+        if(oDto.isPresent()){
+            dto = oDto.get();
+        }
 
         assertNotNull(dto);
     }

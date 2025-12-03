@@ -1,43 +1,42 @@
 package com.sungbok.community.security.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sungbok.community.common.dto.OkResponseDTO;
-import com.sungbok.community.security.model.PrincipalDetails;
+import com.sungbok.community.dto.UserMemberDTO;
+import com.sungbok.community.util.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.PrintWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
-import java.io.PrintWriter;
+import tools.jackson.databind.ObjectMapper;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-//  private final MappingJackson2HttpMessageConverter defaultJacksonConverter;
   private final ObjectMapper objectMapper;
 
   @Override
-  public void onAuthenticationSuccess(HttpServletRequest request,
+  public void onAuthenticationSuccess(@Nullable HttpServletRequest request,
                                       HttpServletResponse response,
                                       Authentication authentication) throws IOException {
 
+    UserMemberDTO userMember = SecurityUtils.getUserFromAuthentication(authentication);
 
-    PrincipalDetails user =  (PrincipalDetails) authentication.getPrincipal();
-    log.info("SuccessHandler loginUser: {}", objectMapper.writeValueAsString(user.getUser()));
+    log.info("SuccessHandler loginUser: {}", objectMapper.writeValueAsString(userMember));
 
     OkResponseDTO responseDto = OkResponseDTO.of(
             HttpStatus.OK.value(),
             HttpStatus.OK.name(),             // 응답 메시지
-            user.getUser()              // 응답 데이터 (UserMemberDTO)
+            userMember              // 응답 데이터 (UserMemberDTO)
     );
 
     response.setStatus(HttpServletResponse.SC_OK);

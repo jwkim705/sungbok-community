@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.jooq.generated.tables.pojos.Members;
 import org.jooq.generated.tables.pojos.Users;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -24,17 +25,17 @@ public class UserMemberDTO implements Serializable {
 
   private final String password;
 
-  private final LocalDate birthdate;
+  private final @Nullable LocalDate birthdate;
 
-  private final String gender;
+  private final @Nullable String gender;
 
-  private final String address;
+  private final @Nullable String address;
 
-  private final String phoneNumber;
+  private final @Nullable String phoneNumber;
 
-  private final String picture;
+  private final @Nullable String picture;
 
-  private final Long registeredByUserId;
+  private final @Nullable Long registeredByUserId;
 
   private final UserRole role;
 

@@ -26,7 +26,7 @@ public class UserRepository {
   public UserRepository(DSLContext dsl, Configuration configuration, BCryptPasswordEncoder passwordEncoder) {
     this.dsl = dsl;
     this.dao = new UsersDao(configuration);
-      this.passwordEncoder = passwordEncoder;
+    this.passwordEncoder = passwordEncoder;
   }
 
   public Optional<Users> findById(Long id) {

@@ -1,23 +1,32 @@
-import org.jooq.meta.jaxb.*
-
 buildscript {
     ext {
-        jooqVersion = '3.20.4'
+        jooqVersion = '3.20.9'
+    }
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
     }
 }
 
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.4.5'
+    id 'org.springframework.boot' version '4.0.0'
     id 'io.spring.dependency-management' version '1.1.7'
 
+    //Graalvm
+    id 'org.graalvm.buildtools.native' version '0.11.1'
+
     //jooq
-    id 'nu.studer.jooq' version '10.1'  // JOOQ 코드 생성을 위한 플러그인
+    id 'nu.studer.jooq' version '10.1.1'  // JOOQ 코드 생성을 위한 플러그인
 
     //restdocs
-    id 'org.asciidoctor.jvm.convert' version '4.0.4'
+    id 'org.asciidoctor.jvm.convert' version '4.0.5'
     id 'com.epages.restdocs-api-spec' version '0.19.4'
     id 'org.hidetake.swagger.generator' version '2.19.2'
+}
+
+repositories {
+    mavenCentral()
 }
 
 group = 'com.sungbok'
@@ -25,7 +34,7 @@ version = '0.0.1'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -33,17 +42,10 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
+    configureEach {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+        exclude group: 'org.apache.logging.log4j', module: 'log4j-to-slf4j'
     }
-    all*.exclude module: 'spring-boot-starter-logging'
-}
-
-repositories {
-    mavenCentral()
 }
 
 dependencies {
@@ -74,31 +76,32 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // JSpecify for null safety annotations
+    compileOnly 'org.jspecify:jspecify:1.0.0'
+
     // API 문서화
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6' // Swagger UI 추가
+    implementation('org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0')
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc' // Spring REST Docs 추가
     testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.19.4'
 
     //common String util
-    implementation 'commons-io:commons-io:2.19.0'
-    implementation 'org.apache.commons:commons-text:1.13.1'
-    implementation 'org.apache.commons:commons-lang3:3.17.0'
-
-    //object mapper
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.0'
+    implementation 'commons-io:commons-io:2.21.0'
+    implementation 'org.apache.commons:commons-text:1.14.0'
+    implementation 'org.apache.commons:commons-lang3:3.20.0'
 
     // 테스팅
-    implementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test' // Spring Boot 4.0 모듈화 - MockMvc 지원
+    testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 // jOOQ 코드 생성
 jooq {
-    version.set("${jooqVersion}")
+    version = "${jooqVersion}"
 
     configurations {
-        create("main") {
+        main {
             generationTool {
                 jdbc {	// DB 접속정보 설정, 로컬의 경우 아래처럼 사용하고, 실제 배포 환경에서는 접속정보등을 환경변수등으로 추가해줘야 한다.(jenkins 등에서)
                     driver = "org.postgresql.Driver"
@@ -172,7 +175,8 @@ sourceSets {
 
 openapi3 {
     servers = [
-            { url = "http://localhost:8080"; description = "Local server" }
+            { url = "http://localhost:8080"; description = "Local server" },
+            { url = "https://sungbok.p-e.kr/api"; description = "Prod server" }
     ]
     title = "Spring Restdocs with SwaggerUI Sample"
     description = "This is made with Spring REST Docs with SwaggerUI."

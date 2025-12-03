@@ -1,25 +1,29 @@
 package com.sungbok.community.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.core.json.JsonFactory;
+import tools.jackson.databind.ObjectMapper;
 import com.sungbok.community.common.xss.HtmlCharacterEscapes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-
-import java.nio.charset.StandardCharsets;
 
 @Configuration
 public class MessageConverterConfig {
 
+    /**
+     * Jackson 3 ObjectMapper 설정
+     * - XSS 방어를 위한 HTML 이스케이핑 적용
+     * - JSR-310 (Java 8 Date/Time) 지원은 Jackson 3에서 자동 포함
+     * - Spring Boot가 이 ObjectMapper를 자동으로 MessageConverter에 적용
+     * - Jackson 3에서는 immutable builder pattern 사용
+     */
     @Bean
-    public MappingJackson2HttpMessageConverter htmlEscapedJacksonConverter() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.getFactory().setCharacterEscapes(new HtmlCharacterEscapes());
-        objectMapper.registerModule(new JavaTimeModule());
-        MappingJackson2HttpMessageConverter converter =new MappingJackson2HttpMessageConverter(objectMapper);
-        converter.setDefaultCharset(StandardCharsets.UTF_8);
-        return converter;
+    public ObjectMapper objectMapper() {
+        // Jackson 3: immutable builder pattern으로 JsonFactory 생성
+        JsonFactory factory = JsonFactory.builder()
+                .characterEscapes(new HtmlCharacterEscapes())
+                .build();
+
+        return new ObjectMapper(factory);
     }
 
 }

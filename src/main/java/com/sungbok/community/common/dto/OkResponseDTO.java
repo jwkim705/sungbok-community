@@ -1,19 +1,23 @@
 package com.sungbok.community.common.dto;
 
 import java.io.Serial;
-
-import com.sungbok.community.common.vo.AbstractObject;
+import java.io.Serializable;
+import java.util.Map;
+import lombok.Builder;
 import lombok.Getter;
+import org.jspecify.annotations.Nullable;
+import org.springframework.http.HttpStatus;
 
 @Getter
-public class OkResponseDTO extends AbstractObject {
+@Builder
+public class OkResponseDTO implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 5975254627376566119L;
 
   private final int code;
-  private String message;
-  private Object data;
+  private @Nullable String message;
+  private @Nullable Object data;
 
   public OkResponseDTO(int code) {
     this.code = code;
@@ -44,5 +48,48 @@ public class OkResponseDTO extends AbstractObject {
     final Object data
   ) {
     return new OkResponseDTO(code, message, data);
+  }
+
+  /**
+   * 단순 성공 응답 (200 OK, 메시지 없음)
+   */
+  public static OkResponseDTO success() {
+    return new OkResponseDTO(HttpStatus.OK.value());
+  }
+
+  /**
+   * 메시지와 함께 성공 응답
+   */
+  public static OkResponseDTO success(String message) {
+    return new OkResponseDTO(HttpStatus.OK.value(), message);
+  }
+
+  /**
+   * 메시지와 데이터와 함께 성공 응답
+   */
+  public static OkResponseDTO success(String message, Object data) {
+    return new OkResponseDTO(HttpStatus.OK.value(), message, data);
+  }
+
+  /**
+   * 삭제 성공 응답 (삭제 건수 포함)
+   */
+  public static OkResponseDTO deleted(int count) {
+    return new OkResponseDTO(
+      HttpStatus.OK.value(),
+      "Successfully deleted",
+      Map.of("deletedCount", count)
+    );
+  }
+
+  /**
+   * 삭제 성공 응답 (리소스명 + 삭제 건수)
+   */
+  public static OkResponseDTO deleted(String resourceName, int count) {
+    return new OkResponseDTO(
+      HttpStatus.OK.value(),
+      resourceName + " successfully deleted",
+      Map.of("deletedCount", count)
+    );
   }
 }

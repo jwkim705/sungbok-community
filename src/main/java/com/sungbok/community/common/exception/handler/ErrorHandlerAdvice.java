@@ -7,6 +7,7 @@ import com.sungbok.community.common.exception.NotFoundException;
 import com.sungbok.community.common.exception.NotMatchPwdException;
 import com.sungbok.community.common.exception.UnAuthorizedException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,42 +25,42 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 public class ErrorHandlerAdvice {
 
   @ExceptionHandler(DataNotFoundException.class)
-  public ResponseEntity<ErrorResponseDTO> handleDataNotFoundException(DataNotFoundException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleDataNotFoundException(DataNotFoundException exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(exception.getCode().value(), exception.getMessage());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(exception.getCode().value()).body(response);
   }
 
   @ExceptionHandler(NotFoundException.class)
-  public ResponseEntity<ErrorResponseDTO> handleNotFoundException(NotFoundException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleNotFoundException(NotFoundException exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(exception.getCode().value(), exception.getMessage());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(exception.getCode().value()).body(response);
   }
 
   @ExceptionHandler(UsernameNotFoundException.class)
-  public ResponseEntity<ErrorResponseDTO> handleNotFoundException(UsernameNotFoundException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleNotFoundException(UsernameNotFoundException exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(HttpStatus.NOT_FOUND.value(), exception.getMessage());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(HttpStatus.NOT_FOUND.value()).body(response);
   }
 
   @ExceptionHandler(UnAuthorizedException.class)
-  public ResponseEntity<ErrorResponseDTO> handleUnAuthorizedException(UnAuthorizedException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleUnAuthorizedException(UnAuthorizedException exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(exception.getCode().value(), exception.getMessage());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(exception.getCode().value()).body(response);
   }
 
   @ExceptionHandler(AlreadyExistException.class)
-  public ResponseEntity<ErrorResponseDTO> handleAlreadyExistException(AlreadyExistException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleAlreadyExistException(AlreadyExistException exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(exception.getCode().value(), exception.getMessage());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(exception.getCode().value()).body(response);
   }
 
   @ExceptionHandler(BindException.class)
-  public ResponseEntity<ErrorResponseDTO> handleMethodArgumentNotValidException(BindException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleMethodArgumentNotValidException(BindException exception) {
     BindingResult bindingResult = exception.getBindingResult();
     StringBuilder stringBuilder = new StringBuilder();
     for (FieldError fieldError : bindingResult.getFieldErrors()) {
@@ -72,29 +73,36 @@ public class ErrorHandlerAdvice {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
   }
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleIllegalArgumentException(IllegalArgumentException exception) {
+    ErrorResponseDTO response = ErrorResponseDTO.of(HttpStatus.BAD_REQUEST.value(), exception.getMessage());
+    log.error(exception.getMessage(), exception);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+  }
+
   @ExceptionHandler({AuthenticationException.class, AccessDeniedException.class})
-  public ResponseEntity<ErrorResponseDTO> handleAuthenticationException(AuthenticationException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleAuthenticationException(AuthenticationException exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(HttpStatus.UNAUTHORIZED.value(), exception.getMessage());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
   }
 
   @ExceptionHandler(NoHandlerFoundException.class)
-  public ResponseEntity<ErrorResponseDTO> handleNoHandlerFoundException(NoHandlerFoundException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleNoHandlerFoundException(NoHandlerFoundException exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(HttpStatus.NOT_FOUND.value(), exception.getMessage(),exception.getRequestHeaders());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
   }
 
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<ErrorResponseDTO> handleException(Exception exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleException(Exception exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(HttpStatus.INTERNAL_SERVER_ERROR.value(), exception.getMessage());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
   }
 
   @ExceptionHandler(NotMatchPwdException.class)
-  public ResponseEntity<ErrorResponseDTO> handleNotMatchPwdException(NotMatchPwdException exception) {
+  public ResponseEntity<@NonNull ErrorResponseDTO> handleNotMatchPwdException(NotMatchPwdException exception) {
     ErrorResponseDTO response = ErrorResponseDTO.of(HttpStatus.UNAUTHORIZED.value(), exception.getMessage(),exception.getMessage());
     log.error(exception.getMessage(), exception);
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);

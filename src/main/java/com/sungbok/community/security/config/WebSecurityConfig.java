@@ -47,9 +47,24 @@ public class WebSecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
                 .cors(cors ->
                         cors.configurationSource(corsConfig.corsConfigurationSource())
+                )
+                .authorizeHttpRequests(authorize -> authorize
+                        // 공개 접근 엔드포인트
+                        .requestMatchers("/health-check").permitAll()
+                        .requestMatchers("/users/signup").permitAll()
+                        .requestMatchers("/posts").permitAll()  // GET /api/posts - 게시글 목록 조회
+
+                        // 로그인/로그아웃 엔드포인트
+                        .requestMatchers("/login", "/logout").permitAll()
+
+                        // API 문서 (이미 ignoreList에 있지만 명시)
+                        .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger.html").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+
+                        // 나머지 모든 요청은 인증 필요
+                        .anyRequest().authenticated()
                 )
                 .headers(httpSecurityHeadersConfigurer -> httpSecurityHeadersConfigurer
                         .xssProtection(xXssConfig ->
@@ -57,7 +72,7 @@ public class WebSecurityConfig {
                         // X-XSS-Protection: 1; mode=block;
                         .contentTypeOptions(withDefaults()) // X-Content-Type-Options: nosniff
                         .cacheControl(withDefaults()) // Cache-Control: no-cache, no-store, max-age=0, must-revalidate
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny) // X-Frame-Options: DENY
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin) // X-Frame-Options: SAMEORIGIN
                         .httpStrictTransportSecurity(HeadersConfigurer.HstsConfig::disable)
                 )
 //                .oauth2Login(oauth2 -> oauth2

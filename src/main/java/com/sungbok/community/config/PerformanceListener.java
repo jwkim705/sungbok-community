@@ -1,5 +1,6 @@
 package com.sungbok.community.config;
 
+import java.io.Serial;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.ExecuteContext;
 import org.jooq.ExecuteListener;
@@ -10,6 +11,9 @@ import java.time.Duration;
 
 @Slf4j
 public class PerformanceListener implements ExecuteListener {
+
+    @Serial
+    private static final long serialVersionUID = 5961520223340391907L;
 
     private StopWatch watch;
     private static final Duration SLOW_QUERY_LIMIT = Duration.ofSeconds(3);

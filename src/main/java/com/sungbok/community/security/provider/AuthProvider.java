@@ -20,7 +20,7 @@ public class AuthProvider {
   public String[] whiteListDefaultEndpoints() {
 
     return new String[] {
-      "/api/**",
+      // 정적 리소스만 포함 (필요시)
     };
   }
 

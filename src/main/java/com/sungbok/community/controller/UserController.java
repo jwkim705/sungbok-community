@@ -2,12 +2,14 @@ package com.sungbok.community.controller;
 
 
 import com.sungbok.community.common.constant.UriConstant;
+import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.service.change.ChangeUserService;
 import com.sungbok.community.service.get.GetUserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +33,7 @@ public class UserController {
 //    }
 
     @PostMapping("/signup")
-    public ResponseEntity<UserMemberDTO> signup(@RequestBody @Valid AddUserRequestDTO request) {
+    public ResponseEntity<@NonNull UserMemberDTO> signup(@RequestBody @Valid AddUserRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(changeUserService.signup(request));
     }
 
@@ -43,14 +45,14 @@ public class UserController {
 
 //    @PatchMapping
 //    public ResponseEntity<UpdateMeResponseDTO> updateMe(@RequestBody @Valid UpdateUserRequestDTO updateUserRequest, Authentication authentication) {
-//        PrincipalDetails user =  (PrincipalDetails) authentication.getPrincipal();
-//        return ResponseEntity.ok(changeUserService.updateMe(user.getUser().getUserId(), updateUserRequest));
+//        UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
+//        return ResponseEntity.ok(changeUserService.updateMe(user.getUserId(), updateUserRequest));
 //    }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable("userId") Long userId) {
+    public ResponseEntity<@NonNull OkResponseDTO> deleteUser(@PathVariable("userId") Long userId) {
         changeUserService.deleteUser(userId);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.ok(OkResponseDTO.deleted("User", 1));
     }
 
 }

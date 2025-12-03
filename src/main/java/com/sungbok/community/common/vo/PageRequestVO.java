@@ -3,6 +3,7 @@ package com.sungbok.community.common.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serial;
+import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.domain.PageRequest;
@@ -11,7 +12,7 @@ import org.springframework.util.StringUtils;
 
 @Getter
 @Setter
-public class PageRequestVO extends AbstractObject{
+public class PageRequestVO implements Serializable {
   @Serial
   private static final long serialVersionUID = 2884087881478889291L;
 
