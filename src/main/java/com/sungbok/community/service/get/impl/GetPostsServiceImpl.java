@@ -24,26 +24,26 @@ public class GetPostsServiceImpl implements GetPostsService {
 
         //카테고리 체크
 
-        return postsRepository.findAllPosts(searchVO);
+        return postsRepository.fetchAllPosts(searchVO);
     }
 
     @Override
     @Transactional
     public GetPostResponseDTO getPostById(Long postId, Long userId) {
         // 조회수 증가 (조회하는 사용자가 게시글 작성자가 아닌 경우에만)
-        GetPostResponseDTO post = postsRepository.findPostById(postId);
-        
+        GetPostResponseDTO post = postsRepository.fetchPostById(postId);
+
         if (Objects.isNull(post)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다.");
         }
-        
+
         // 자신의 게시글이 아닌 경우에만 조회수 증가
         if (!post.getUserId().equals(userId)) {
-            postsRepository.increaseViewCount(postId);
+            postsRepository.incrementViewCount(postId);
             // 증가된 조회수를 반영
             post.viewCount();
         }
-        
+
         return post;
     }
 }

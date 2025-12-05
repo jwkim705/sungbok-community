@@ -30,7 +30,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
 
     OkResponseDTO responseDTO = OkResponseDTO.of(
         HttpStatus.OK.value(),
-        HttpStatus.OK.name(),
+        "Logout successful. Use POST /auth/logout to invalidate JWT tokens.",
         userMember
     );
     if (response != null) {

@@ -17,6 +17,8 @@ public class UserMemberDTO implements Serializable {
   @Serial
   private static final long serialVersionUID = 5146495955594586796L;
 
+  private final Long appId;
+
   private final Long userId;
 
   private final String email;
@@ -41,6 +43,7 @@ public class UserMemberDTO implements Serializable {
 
   @Builder
   public UserMemberDTO(Users user, Members member, UserRole role) {
+    this.appId = user.getAppId();
     this.userId = user.getId();
     this.email = user.getEmail();
     this.password = user.getPassword();
@@ -51,13 +54,14 @@ public class UserMemberDTO implements Serializable {
     this.phoneNumber = member.getPhoneNumber();
     this.picture = member.getPicture();
     this.role = role;
-    this.registeredByUserId = getRegisteredByUserId();
+    this.registeredByUserId = member.getRegisteredByUserId();
   }
 
   public UserMemberDTO(
-          Long userId, String email, String name, String password, LocalDate birthdate,
+          Long appId, Long userId, String email, String name, String password, LocalDate birthdate,
           String gender, String address, String phoneNumber, String picture,
           Long registeredByUserId, UserRole role) {
+    this.appId = appId;
     this.userId = userId;
     this.email = email;
     this.name = name;

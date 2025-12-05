@@ -19,17 +19,17 @@ public class GetUserServiceImpl implements GetUserService {
 
     @Override
     public UserMemberDTO getUser(Long userId) {
-        return userRepository.findUserWithDetailsById(userId)
+        return userRepository.fetchUserWithDetailsById(userId)
                 .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + userId));
     }
 
     @Override
     public UserMemberDTO getUser(String email) {
-        Users user = userRepository.findByEmail(email)
+        Users user = userRepository.fetchByEmail(email)
             .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
 
         // Use the JOIN method from UserRepository to get the DTO
-        return userRepository.findUserWithDetailsById(user.getId())
+        return userRepository.fetchUserWithDetailsById(user.getId())
              .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + user.getId() + " after finding user by email."));
     }
 

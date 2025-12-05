@@ -13,10 +13,15 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
+/**
+ * Redis 설정
+ * Refresh Token 저장 및 캐싱용
+ * (세션 관리는 JWT로 전환됨)
+ *
+ * @since 0.0.1
+ */
 @Configuration
-@EnableRedisHttpSession
 @RequiredArgsConstructor
 public class RedisConfig {
 
@@ -65,5 +70,4 @@ public class RedisConfig {
         container.setConnectionFactory(connectionFactory);
         return container;
     }
-
 }

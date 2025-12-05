@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -43,13 +43,21 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public ResponseEntity<@NonNull GetPostResponseDTO> getPostById(@PathVariable("postId") Long postId,
-        Authentication authentication) {
-        UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
-        return ResponseEntity.ok(getPostsService.getPostById(postId, user.getUserId()));
+    public ResponseEntity<@NonNull GetPostResponseDTO> getPostById(
+            @PathVariable("postId") Long postId,
+            @org.jspecify.annotations.Nullable Authentication authentication) {
+
+        // 인증 선택적: 로그인하지 않아도 공개 게시글 조회 가능
+        Long userId = null;
+        if (authentication != null) {
+            UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
+            userId = user.getUserId();
+        }
+
+        return ResponseEntity.ok(getPostsService.getPostById(postId, userId));
     }
 
-    @PutMapping
+    @PostMapping
     public ResponseEntity<@NonNull AddPostResponseDTO> addPost(@RequestBody @Valid AddPostRequestDTO addPostRequest,
                                                          Authentication authentication) {
         UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);

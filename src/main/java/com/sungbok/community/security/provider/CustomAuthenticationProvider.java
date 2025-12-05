@@ -1,6 +1,7 @@
 package com.sungbok.community.security.provider;
 
 import com.sungbok.community.common.exception.NotMatchPwdException;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -23,7 +24,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException {
     String username = authentication.getName();
-    String password = authentication.getCredentials().toString();
+    String password = Objects.requireNonNull(authentication.getCredentials()).toString();
 
     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 

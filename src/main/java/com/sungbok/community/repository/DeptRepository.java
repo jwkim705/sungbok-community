@@ -14,7 +14,7 @@ public class DeptRepository {
         this.dao = new DepartmentsDao(configuration);
     }
 
-    public Departments findByName(String name) {
+    public Departments fetchByName(String name) {
         return dao.fetchOneByName(name);
     }
 

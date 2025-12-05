@@ -21,7 +21,7 @@ public enum UserRole {
         this.code = code;
     }
 
-    public static UserRole findByCode(String code) {
+    public static UserRole fromCode(String code) {
         return Arrays.stream(values())
                 .filter(v -> v.code.equalsIgnoreCase(code))
                 .findFirst()

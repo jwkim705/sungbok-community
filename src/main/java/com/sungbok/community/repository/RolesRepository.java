@@ -14,7 +14,7 @@ public class RolesRepository {
         this.dao = new RolesDao(configuration);
     }
 
-    public Roles findByName(String name) {
+    public Roles fetchByName(String name) {
         return dao.fetchOneByName(name);
     }
 

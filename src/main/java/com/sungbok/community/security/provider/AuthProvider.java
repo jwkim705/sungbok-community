@@ -8,12 +8,10 @@ public class AuthProvider {
   public String[] ignoreListDefaultEndpoints() {
 
     return new String[] {
-      "/api-docs/**",
+      "/v3/api-docs/**",
+      "/swagger-ui.html",
       "/swagger-ui/**",
-      "/swagger.html",
-      "/h2-console/**",
-      "/api/login",
-      "/api/logout",
+      "/h2-console/**"
     };
   }
 

@@ -142,6 +142,7 @@ class SecurityUtilsTest {
 
   private UserMemberDTO createTestUser() {
     return new UserMemberDTO(
+        1L, // appId
         1L,
         "test@example.com",
         "Test User",

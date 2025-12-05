@@ -30,17 +30,39 @@ public class ChangeUserServiceImpl implements ChangeUserService {
     @Override
     public UserMemberDTO signup(AddUserRequestDTO dto) {
 
-        if(Objects.nonNull(userRepository.findUserWithDetailsByEmail(dto.getEmail()))){
+        if(userRepository.fetchUserWithDetailsByEmail(dto.getEmail()).isPresent()){
             throw new AlreadyExistException("이미 가입한 회원입니다.");
         }
 
-        Users user = userRepository.save(dto);
-        Members member = membersRepository.save(dto,user);
+        // Users 엔티티 생성 및 저장
+        Users user = new Users();
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setIsDeleted(false);
+        Users savedUser = userRepository.insert(user);
+
+        // Members 엔티티 생성 및 저장
+        Members member = new Members();
+        member.setUserId(savedUser.getId());
+        member.setName(dto.getName());
+        member.setBirthdate(dto.getBirthday());
+        member.setGender(dto.getGender());
+        member.setAddress(dto.getAddress());
+        member.setPhoneNumber(dto.getPhoneNumber());
+        member.setRole(StringUtils.isNotBlank(dto.getRole()) ? dto.getRole() : "GUEST");
+        // registeredByUserId가 null이면 자신의 ID를 등록자로 설정 (자가 등록)
+        member.setRegisteredByUserId(
+            dto.getRegisteredByUserId() != null
+                ? dto.getRegisteredByUserId()
+                : savedUser.getId()
+        );
+        member.setIsDeleted(false);
+        Members savedMember = membersRepository.insert(member);
 
         return UserMemberDTO.builder()
-                .user(user)
-                .member(member)
-                .role(UserRole.findByCode(member.getRole()))
+                .user(savedUser)
+                .member(savedMember)
+                .role(UserRole.fromCode(savedMember.getRole()))
                 .build();
     }
 
@@ -53,7 +75,7 @@ public class ChangeUserServiceImpl implements ChangeUserService {
         if (userId != null && userId > 0) {
             finalUserId = userId;
 
-            Users existingUser = userRepository.findById(userId)
+            Users existingUser = userRepository.fetchById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found for update with ID: " + userId));
 
             if (updateReq.getEmail() != null) {
@@ -62,9 +84,9 @@ public class ChangeUserServiceImpl implements ChangeUserService {
             if (StringUtils.isNotBlank(updateReq.getPassword())) {
                 existingUser.setPassword(passwordEncoder.encode(updateReq.getPassword()));
             }
-            userRepository.updateUsingStore(existingUser);
+            userRepository.update(existingUser);
 
-            Members existingMember = membersRepository.findByUserId(userId)
+            Members existingMember = membersRepository.fetchByUserId(userId)
                  .orElseThrow(() -> new RuntimeException("Member not found for user ID: " + userId)); // Or handle if member might not exist
 
             if (updateReq.getName() != null) {
@@ -73,7 +95,7 @@ public class ChangeUserServiceImpl implements ChangeUserService {
             if (updateReq.getPicture() != null) {
                 existingMember.setPicture(updateReq.getPicture());
             }
-            membersRepository.updateUsingStore(existingMember);
+            membersRepository.update(existingMember);
 
 
 
@@ -90,23 +112,26 @@ public class ChangeUserServiceImpl implements ChangeUserService {
             } else {
                 newUser.setPassword(null);
             }
+            newUser.setIsDeleted(false);
 
-            Users savedUser = userRepository.save(newUser);
+            Users savedUser = userRepository.insert(newUser);
             finalUserId = savedUser.getId();
 
             Members newMember = new Members();
             newMember.setUserId(finalUserId);
             newMember.setName(updateReq.getName());
             newMember.setPicture(updateReq.getPicture());
-            membersRepository.save(newMember);
+            newMember.setRole(updateReq.getRole() != null ? updateReq.getRole().getCode() : "GUEST");
+            newMember.setIsDeleted(false);
+            membersRepository.insert(newMember);
         }
 
-        return userRepository.findUserWithDetailsById(finalUserId)
+        return userRepository.fetchUserWithDetailsById(finalUserId)
              .orElseThrow(() -> new RuntimeException("Failed to fetch final user/member state after save/update for ID: " + finalUserId));
     }
 
     @Override
     public void deleteUser(Long userId) {
-        userRepository.deleteUser(userId);
+        userRepository.softDelete(userId);
     }
 }

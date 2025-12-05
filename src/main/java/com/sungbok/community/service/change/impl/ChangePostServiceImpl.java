@@ -42,7 +42,7 @@ public class ChangePostServiceImpl implements ChangePostService {
         post.setModifiedAt(LocalDateTime.now());
 
         // 게시글 저장
-        Posts savedPost = postsRepository.savePost(post);
+        Posts savedPost = postsRepository.insert(post);
         if (savedPost == null) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "게시글 저장에 실패했습니다.");
         }
@@ -81,8 +81,8 @@ public class ChangePostServiceImpl implements ChangePostService {
         post.setModifiedBy(userId);
 
         // 게시글 업데이트
-        boolean updated = postsRepository.updatePost(post);
-        if (!updated) {
+        int updated = postsRepository.update(post);
+        if (updated == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없거나 수정에 실패했습니다.");
         }
 
@@ -98,8 +98,8 @@ public class ChangePostServiceImpl implements ChangePostService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "게시글 삭제 권한이 없습니다.");
         }
         
-        boolean deleted = postsRepository.deletePost(postId, userId);
-        if (!deleted) {
+        int deleted = postsRepository.softDelete(postId, userId);
+        if (deleted == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없거나 삭제에 실패했습니다.");
         }
     }

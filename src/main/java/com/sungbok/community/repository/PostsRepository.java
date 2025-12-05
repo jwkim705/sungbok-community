@@ -1,5 +1,6 @@
 package com.sungbok.community.repository;
 
+import static com.sungbok.community.repository.util.JooqTenantConditionUtils.appIdCondition;
 import static org.jooq.generated.Tables.COMMENTS;
 import static org.jooq.generated.Tables.FILES;
 import static org.jooq.generated.Tables.POSTS;
@@ -9,6 +10,7 @@ import static org.jooq.impl.DSL.multiset;
 import com.sungbok.community.dto.GetPostResponseDTO;
 import com.sungbok.community.dto.GetPostsPageResponseDTO;
 import com.sungbok.community.dto.PostSearchVO;
+import com.sungbok.community.security.TenantContext;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.jooq.Condition;
@@ -23,22 +25,27 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
+/**
+ * 게시글 데이터 접근 Repository
+ * 하이브리드 DAO + DSL 패턴 사용
+ * MULTISET을 사용한 중첩 컬렉션 조회 패턴 적용
+ */
 @Repository
 public class PostsRepository {
 
-    private final DSLContext dslContext;
-    private final PostsDao postsDao;
+    private final DSLContext dsl;
+    private final PostsDao dao;
 
-    public PostsRepository(Configuration configuration, DSLContext dslContext) {
-        this.dslContext = dslContext;
-        this.postsDao = new PostsDao(configuration);
+    public PostsRepository(DSLContext dsl, Configuration configuration) {
+        this.dsl = dsl;
+        this.dao = new PostsDao(configuration);
     }
 
-    public GetPostsPageResponseDTO findAllPosts(PostSearchVO searchVO) {
+    public GetPostsPageResponseDTO fetchAllPosts(PostSearchVO searchVO) {
 
         Pageable pageable = searchVO.toPageable();
 
-        // 검색 조건 설정
+        // 검색 조건 설정 (app_id 자동 필터링 포함)
         Condition searchCondition = createSearchCondition(searchVO.getSearch());
 
         // 카테고리 필터링
@@ -49,12 +56,13 @@ public class PostsRepository {
         // 정렬 설정
         SortField<?> sortField = createSortField(searchVO.getSort(), searchVO.getDirection());
 
-        // 전체 게시글 수 조회
-        int totalCount = dslContext.fetchCount(POSTS, searchCondition);
+        // 전체 게시글 수 조회 (app_id 자동 필터링)
+        int totalCount = dsl.fetchCount(POSTS, searchCondition);
 
         // 게시글 조회 (댓글, 파일, 유튜브 멀티셋 포함)
         List<GetPostResponseDTO> postList =
-            dslContext.select(
+            dsl.select(
+                    POSTS.APP_ID,
                     POSTS.POST_ID,
                     POSTS.TITLE,
                     POSTS.CONTENT,
@@ -71,7 +79,7 @@ public class PostsRepository {
                     POSTS.MODIFIED_BY,
                     // 파일 멀티셋
                     multiset(
-                        dslContext.select(
+                        dsl.select(
                             FILES.FILE_ID
                             ,FILES.RELATED_ENTITY_ID
                             ,FILES.RELATED_ENTITY_TYPE
@@ -88,13 +96,14 @@ public class PostsRepository {
                             ,FILES.MODIFIED_BY
                         )
                         .from(FILES)
-                        .where(FILES.RELATED_ENTITY_ID.eq(POSTS.POST_ID))
+                        .where(FILES.APP_ID.eq(POSTS.APP_ID))
+                        .and(FILES.RELATED_ENTITY_ID.eq(POSTS.POST_ID))
                         .and(FILES.RELATED_ENTITY_TYPE.eq("post"))
                         .and(FILES.IS_DELETED.eq(false))
                     ).as("files"),
                     // 유튜브 멀티셋
                     multiset(
-                        dslContext.select(
+                        dsl.select(
                             POST_YOUTUBE.POST_YOUTUBE_ID
                             ,POST_YOUTUBE.YOUTUBE_VIDEO_ID
                             ,POST_YOUTUBE.IS_DELETED
@@ -104,7 +113,8 @@ public class PostsRepository {
                             ,POST_YOUTUBE.MODIFIED_BY
                         )
                         .from(POST_YOUTUBE)
-                        .where(POST_YOUTUBE.POST_ID.eq(POSTS.POST_ID))
+                        .where(POST_YOUTUBE.APP_ID.eq(POSTS.APP_ID))
+                        .and(POST_YOUTUBE.POST_ID.eq(POSTS.POST_ID))
                         .and(POST_YOUTUBE.IS_DELETED.eq(false))
                     ).as("youtube")
         )
@@ -118,9 +128,10 @@ public class PostsRepository {
         return GetPostsPageResponseDTO.of(postList, pageable, totalCount);
     }
 
-    public GetPostResponseDTO findPostById(Long postId) {
+    public GetPostResponseDTO fetchPostById(Long postId) {
         return
-            dslContext.select(
+            dsl.select(
+                    POSTS.APP_ID,
                     POSTS.POST_ID,
                     POSTS.TITLE,
                     POSTS.CONTENT,
@@ -137,7 +148,7 @@ public class PostsRepository {
                     POSTS.MODIFIED_BY,
                     // 댓글 멀티셋
                     multiset(
-                        dslContext.select(
+                        dsl.select(
                             COMMENTS.COMMENT_ID
                             ,COMMENTS.POST_ID
                             ,COMMENTS.USER_ID
@@ -150,13 +161,14 @@ public class PostsRepository {
                             ,COMMENTS.MODIFIED_AT
                             ,COMMENTS.MODIFIED_BY
                         ).from(COMMENTS)
-                        .where(COMMENTS.POST_ID.eq(POSTS.POST_ID))
+                        .where(COMMENTS.APP_ID.eq(POSTS.APP_ID))
+                        .and(COMMENTS.POST_ID.eq(POSTS.POST_ID))
                         .and(COMMENTS.IS_DELETED.eq(false))
                         .orderBy(COMMENTS.CREATED_AT.asc())
                     ).as("comments"),
                     // 파일 멀티셋
                     multiset(
-                        dslContext.select(
+                        dsl.select(
                             FILES.FILE_ID
                             ,FILES.RELATED_ENTITY_ID
                             ,FILES.RELATED_ENTITY_TYPE
@@ -173,13 +185,14 @@ public class PostsRepository {
                             ,FILES.MODIFIED_BY
                         )
                         .from(FILES)
-                        .where(FILES.RELATED_ENTITY_ID.eq(POSTS.POST_ID))
+                        .where(FILES.APP_ID.eq(POSTS.APP_ID))
+                        .and(FILES.RELATED_ENTITY_ID.eq(POSTS.POST_ID))
                         .and(FILES.RELATED_ENTITY_TYPE.eq("post"))
                         .and(FILES.IS_DELETED.eq(false))
                     ).as("files"),
                     // 유튜브 멀티셋
                     multiset(
-                        dslContext.select(
+                        dsl.select(
                             POST_YOUTUBE.POST_YOUTUBE_ID
                             ,POST_YOUTUBE.YOUTUBE_VIDEO_ID
                             ,POST_YOUTUBE.IS_DELETED
@@ -189,94 +202,122 @@ public class PostsRepository {
                             ,POST_YOUTUBE.MODIFIED_BY
                         )
                         .from(POST_YOUTUBE)
-                        .where(POST_YOUTUBE.POST_ID.eq(POSTS.POST_ID))
+                        .where(POST_YOUTUBE.APP_ID.eq(POSTS.APP_ID))
+                        .and(POST_YOUTUBE.POST_ID.eq(POSTS.POST_ID))
                         .and(POST_YOUTUBE.IS_DELETED.eq(false))
                     ).as("youtube")
         )
         .from(POSTS)
-        .where(POSTS.POST_ID.eq(postId))
+        .where(appIdCondition(POSTS.APP_ID))
+        .and(POSTS.POST_ID.eq(postId))
         .and(POSTS.IS_DELETED.eq(false))
         .fetchOneInto(GetPostResponseDTO.class);
     }
 
-    public Posts savePost(Posts post) {
-        // 게시글의 기본 값들 설정
-        if (post.getPostId() == null) {
-            post.setViewCount(0);
-            post.setLikeCount(0);
-            post.setIsDeleted(false);
-            post.setCreatedAt(LocalDateTime.now());
-            post.setModifiedAt(LocalDateTime.now());
-        }
+    /**
+     * RETURNING 절로 새 게시글을 삽입합니다.
+     * app_id는 TenantContext에서 자동 설정
+     *
+     * @param post 삽입할 게시글 엔티티
+     * @return 생성된 ID가 포함된 삽입된 게시글
+     */
+    public Posts insert(Posts post) {
+        // TenantContext에서 app_id 가져오기
+        Long appId = TenantContext.getRequiredAppId();
+        post.setAppId(appId);  // 강제로 현재 테넌트 설정
 
-        // JOOQ DAO를 사용하여 게시글 저장
-        if (post.getPostId() == null) {
-            postsDao.insert(post);
-        } else {
-            postsDao.update(post);
-        }
-
-        return post;
+        return dsl.insertInto(POSTS)
+                .set(dsl.newRecord(POSTS, post))
+                .returning()
+                .fetchOneInto(Posts.class);
     }
 
-    public boolean updatePost(Posts post) {
-        // 기존 게시글 조회
-        Posts existingPost = postsDao.findById(post.getPostId());
-        if (existingPost == null || existingPost.getIsDeleted()) {
-            return false;
-        }
-
-        // 변경 필드만 업데이트
-        existingPost.setTitle(post.getTitle());
-        existingPost.setContent(post.getContent());
-        existingPost.setCategoryNm(post.getCategoryNm());
-        existingPost.setModifiedAt(LocalDateTime.now());
-        existingPost.setModifiedBy(post.getModifiedBy());
-
-        postsDao.update(existingPost);
-
-        return true;
-    }
-
-    public boolean deletePost(Long postId, Long userId) {
-        // 기존 게시글 조회
-        Posts existingPost = postsDao.findById(postId);
-        if (existingPost == null || existingPost.getIsDeleted()) {
-            return false;
-        }
-
-        existingPost.setIsDeleted(true);
-        existingPost.setModifiedAt(LocalDateTime.now());
-        existingPost.setModifiedBy(userId);
-
-        postsDao.update(existingPost);
-        return true;
-    }
-
-    public boolean increaseViewCount(Long postId) {
-        int updated = dslContext.update(POSTS)
-                .set(POSTS.VIEW_COUNT, POSTS.VIEW_COUNT.add(1))
-                .where(POSTS.POST_ID.eq(postId))
+    /**
+     * DSLContext.update() 패턴으로 게시글을 업데이트합니다.
+     * 지정된 필드만 업데이트 (app_id로 격리)
+     *
+     * @param post 업데이트할 값이 포함된 게시글 엔티티
+     * @return 영향받은 행 수
+     */
+    public int update(Posts post) {
+        return dsl.update(POSTS)
+                .set(POSTS.TITLE, post.getTitle())
+                .set(POSTS.CONTENT, post.getContent())
+                .set(POSTS.CATEGORY_NM, post.getCategoryNm())
+                .set(POSTS.MODIFIED_AT, LocalDateTime.now())
+                .set(POSTS.MODIFIED_BY, post.getModifiedBy())
+                .where(appIdCondition(POSTS.APP_ID))
+                .and(POSTS.POST_ID.eq(post.getPostId()))
                 .and(POSTS.IS_DELETED.eq(false))
                 .execute();
-
-        return updated > 0;
     }
 
+    /**
+     * DSLContext.update() 패턴으로 게시글을 소프트 삭제합니다.
+     * app_id로 격리
+     *
+     * @param postId 삭제할 게시글 ID
+     * @param userId 삭제를 수행하는 사용자 ID
+     * @return 영향받은 행 수
+     */
+    public int softDelete(Long postId, Long userId) {
+        return dsl.update(POSTS)
+                .set(POSTS.IS_DELETED, true)
+                .set(POSTS.MODIFIED_AT, LocalDateTime.now())
+                .set(POSTS.MODIFIED_BY, userId)
+                .where(appIdCondition(POSTS.APP_ID))
+                .and(POSTS.POST_ID.eq(postId))
+                .execute();
+    }
+
+    /**
+     * 조회수를 원자적으로 증가시킵니다.
+     * DSLContext.update()를 사용한 단일 필드 업데이트 (app_id로 격리)
+     *
+     * @param postId 게시글 ID
+     * @return 영향받은 행 수
+     */
+    public int incrementViewCount(Long postId) {
+        return dsl.update(POSTS)
+                .set(POSTS.VIEW_COUNT, POSTS.VIEW_COUNT.add(1))
+                .where(appIdCondition(POSTS.APP_ID))
+                .and(POSTS.POST_ID.eq(postId))
+                .and(POSTS.IS_DELETED.eq(false))
+                .execute();
+    }
+
+    /**
+     * 게시글이 사용자 소유인지 확인합니다.
+     * app_id로 격리
+     *
+     * @param postId 게시글 ID
+     * @param userId 사용자 ID
+     * @return 게시글이 사용자 소유이면 true
+     */
     public boolean isPostOwnedByUser(Long postId, Long userId) {
-
-        Condition condition = POSTS.POST_ID.eq(postId);
-        condition.and(POSTS.USER_ID.eq(userId));
-        condition.and(POSTS.IS_DELETED.eq(false));
-
-        return dslContext.fetchCount(POSTS,condition) > 0;
+        return dsl.fetchExists(
+                POSTS,
+                appIdCondition(POSTS.APP_ID)
+                        .and(POSTS.POST_ID.eq(postId))
+                        .and(POSTS.USER_ID.eq(userId))
+                        .and(POSTS.IS_DELETED.eq(false))
+        );
     }
 
     private Condition createSearchCondition(String search) {
-        return StringUtils.hasText(search)
-                ? POSTS.TITLE.containsIgnoreCase(search)
-                .or(POSTS.CONTENT.containsIgnoreCase(search))
-                : DSL.trueCondition();
+        // 기본 조건: app_id 필터링 + 소프트 삭제되지 않은 게시글
+        Condition baseCondition = appIdCondition(POSTS.APP_ID)
+                .and(POSTS.IS_DELETED.eq(false));
+
+        // 검색어가 있으면 제목 또는 내용에서 검색
+        if (StringUtils.hasText(search)) {
+            return baseCondition.and(
+                    POSTS.TITLE.containsIgnoreCase(search)
+                            .or(POSTS.CONTENT.containsIgnoreCase(search))
+            );
+        }
+
+        return baseCondition;
     }
 
     private SortField<?> createSortField(String sort, String direction) {

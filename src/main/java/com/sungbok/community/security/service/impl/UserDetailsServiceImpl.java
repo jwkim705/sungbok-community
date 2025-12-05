@@ -3,8 +3,8 @@ package com.sungbok.community.security.service.impl;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.security.model.PrincipalDetails;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -15,13 +15,11 @@ import org.springframework.stereotype.Service;
 public class UserDetailsServiceImpl implements UserDetailsService {
 
   private final UserRepository userRepository;
-  private final HttpSession httpSession;
 
   @Override
-  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-
-    UserMemberDTO user = userRepository.findUserWithDetailsByEmailOptional(username).orElseThrow(() -> new UsernameNotFoundException("회원을 찾을 수 없습니다."));
-    httpSession.setAttribute("user", user);
+  public @NonNull UserDetails loadUserByUsername(@NonNull String username) throws UsernameNotFoundException {
+    UserMemberDTO user = userRepository.fetchUserWithDetailsByEmail(username)
+            .orElseThrow(() -> new UsernameNotFoundException("회원을 찾을 수 없습니다."));
     return new PrincipalDetails(user);
   }
 }

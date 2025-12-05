@@ -17,7 +17,7 @@ public enum SocialType {
         this.code = code;
     }
 
-    public static SocialType findByCode(String code) {
+    public static SocialType fromCode(String code) {
         return Arrays.stream(values())
                 .filter(v -> v.code.equalsIgnoreCase(code))
                 .findFirst()
