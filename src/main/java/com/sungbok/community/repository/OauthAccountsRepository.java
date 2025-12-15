@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static com.sungbok.community.repository.util.JooqTenantConditionUtils.appIdCondition;
+import static com.sungbok.community.repository.util.JooqTenantConditionUtils.orgIdCondition;
 import static org.jooq.generated.Tables.OAUTH_ACCOUNTS;
 
 /**
@@ -36,16 +36,18 @@ public class OauthAccountsRepository {
      *
      * @param userId 사용자 ID
      * @param socialType 소셜 타입 (GOOGLE, KAKAO, NAVER)
+     * @param providerUserId OAuth 제공자의 고유 사용자 ID (Google sub, Kakao id, Naver id)
      * @return 삽입된 OAuth 계정
      */
-    public OauthAccounts insert(Long userId, SocialType socialType) {
+    public OauthAccounts insert(Long userId, SocialType socialType, String providerUserId) {
         // TenantContext에서 app_id 가져오기
-        Long appId = TenantContext.getRequiredAppId();
+        Long orgId = TenantContext.getRequiredOrgId();
 
         return dsl.insertInto(OAUTH_ACCOUNTS)
-                .set(OAUTH_ACCOUNTS.APP_ID, appId)  // 강제로 현재 테넌트 설정
+                .set(OAUTH_ACCOUNTS.ORG_ID, orgId)  // 강제로 현재 테넌트 설정
                 .set(OAUTH_ACCOUNTS.USER_ID, userId)
                 .set(OAUTH_ACCOUNTS.SOCIAL_TYPE, socialType.getCode())
+                .set(OAUTH_ACCOUNTS.PROVIDER_USER_ID, providerUserId)
                 .set(OAUTH_ACCOUNTS.IS_DELETED, false)
                 .set(OAUTH_ACCOUNTS.CREATED_AT, LocalDateTime.now())
                 .set(OAUTH_ACCOUNTS.MODIFIED_AT, LocalDateTime.now())
@@ -62,7 +64,7 @@ public class OauthAccountsRepository {
      */
     public List<OauthAccounts> fetchByUserId(Long userId) {
         return dsl.selectFrom(OAUTH_ACCOUNTS)
-                .where(appIdCondition(OAUTH_ACCOUNTS.APP_ID))
+                .where(orgIdCondition(OAUTH_ACCOUNTS.ORG_ID))
                 .and(OAUTH_ACCOUNTS.USER_ID.eq(userId))
                 .and(OAUTH_ACCOUNTS.IS_DELETED.eq(false))
                 .fetchInto(OauthAccounts.class);
@@ -78,9 +80,27 @@ public class OauthAccountsRepository {
      */
     public Optional<OauthAccounts> fetchByUserIdAndSocialType(Long userId, SocialType socialType) {
         return dsl.selectFrom(OAUTH_ACCOUNTS)
-                .where(appIdCondition(OAUTH_ACCOUNTS.APP_ID))
+                .where(orgIdCondition(OAUTH_ACCOUNTS.ORG_ID))
                 .and(OAUTH_ACCOUNTS.USER_ID.eq(userId))
                 .and(OAUTH_ACCOUNTS.SOCIAL_TYPE.eq(socialType.getCode()))
+                .and(OAUTH_ACCOUNTS.IS_DELETED.eq(false))
+                .fetchOptionalInto(OauthAccounts.class);
+    }
+
+    /**
+     * OAuth 제공자 ID로 계정을 조회합니다.
+     * 동일한 OAuth 계정이 여러 사용자에 연결되는 것을 방지
+     * app_id로 격리
+     *
+     * @param socialType 소셜 타입
+     * @param providerUserId OAuth 제공자의 고유 사용자 ID
+     * @return Optional로 감싼 OauthAccounts
+     */
+    public Optional<OauthAccounts> fetchByProviderUserId(SocialType socialType, String providerUserId) {
+        return dsl.selectFrom(OAUTH_ACCOUNTS)
+                .where(orgIdCondition(OAUTH_ACCOUNTS.ORG_ID))
+                .and(OAUTH_ACCOUNTS.SOCIAL_TYPE.eq(socialType.getCode()))
+                .and(OAUTH_ACCOUNTS.PROVIDER_USER_ID.eq(providerUserId))
                 .and(OAUTH_ACCOUNTS.IS_DELETED.eq(false))
                 .fetchOptionalInto(OauthAccounts.class);
     }
@@ -96,7 +116,7 @@ public class OauthAccountsRepository {
         return dsl.update(OAUTH_ACCOUNTS)
                 .set(OAUTH_ACCOUNTS.IS_DELETED, true)
                 .set(OAUTH_ACCOUNTS.MODIFIED_AT, LocalDateTime.now())
-                .where(appIdCondition(OAUTH_ACCOUNTS.APP_ID))
+                .where(orgIdCondition(OAUTH_ACCOUNTS.ORG_ID))
                 .and(OAUTH_ACCOUNTS.ID.eq(id))
                 .execute();
     }

@@ -111,7 +111,7 @@ jooq {
                 jdbc {	// DB 접속정보 설정, 로컬의 경우 아래처럼 사용하고, 실제 배포 환경에서는 접속정보등을 환경변수등으로 추가해줘야 한다.(jenkins 등에서)
                     driver = "org.postgresql.Driver"
                     // PostgreSQL URL 형식으로 변경
-                    url = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/community"
+                    url = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/sungbok"
                     user = System.getenv("POSTGRES_USER") ?: "admin"
                     password = System.getenv("POSTGRES_PASSWORD") ?: "1234"
                 }

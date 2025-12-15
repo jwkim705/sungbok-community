@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/community
+    url: jdbc:postgresql://localhost:5432/sungbok
     username: admin # DB 사용자명
     password: 1234 # DB 비밀번호
     driver-class-name: org.postgresql.Driver
@@ -65,7 +65,6 @@ app:
       - http://localhost:19006
   frontend:
     default-url: http://localhost:3000
-    oauth-callback-path: /auth/callback
   jwt:
     # ES256 알고리즘용 EC 키 페어 경로
     private-key: classpath:keys/jwt-private.pem

@@ -1,22 +1,28 @@
 package com.sungbok.community.service.change.impl;
 
 import com.sungbok.community.common.exception.AlreadyExistException;
+import com.sungbok.community.common.exception.DataNotFoundException;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.enums.UserRole;
 import com.sungbok.community.repository.MembersRepository;
+import com.sungbok.community.repository.MembershipRolesRepository;
+import com.sungbok.community.repository.OrganizationsRepository;
+import com.sungbok.community.repository.RolesRepository;
 import com.sungbok.community.repository.UserRepository;
+import com.sungbok.community.security.TenantContext;
 import com.sungbok.community.service.change.ChangeUserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.jooq.generated.tables.pojos.Members;
+import org.jooq.generated.tables.pojos.Memberships;
+import org.jooq.generated.tables.pojos.Organizations;
+import org.jooq.generated.tables.pojos.Roles;
 import org.jooq.generated.tables.pojos.Users;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +31,9 @@ public class ChangeUserServiceImpl implements ChangeUserService {
 
     private final UserRepository userRepository;
     private final MembersRepository membersRepository;
+    private final RolesRepository rolesRepository;
+    private final MembershipRolesRepository membershipRolesRepository;
+    private final OrganizationsRepository organizationsRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
@@ -41,28 +50,51 @@ public class ChangeUserServiceImpl implements ChangeUserService {
         user.setIsDeleted(false);
         Users savedUser = userRepository.insert(user);
 
-        // Members 엔티티 생성 및 저장
-        Members member = new Members();
-        member.setUserId(savedUser.getId());
-        member.setName(dto.getName());
-        member.setBirthdate(dto.getBirthday());
-        member.setGender(dto.getGender());
-        member.setAddress(dto.getAddress());
-        member.setPhoneNumber(dto.getPhoneNumber());
-        member.setRole(StringUtils.isNotBlank(dto.getRole()) ? dto.getRole() : "GUEST");
+        // Memberships 엔티티 생성 및 저장
+        Long orgId = TenantContext.getRequiredOrgId();
+        Memberships membership = new Memberships();
+        membership.setOrgId(orgId);
+        membership.setUserId(savedUser.getId());
+        membership.setName(dto.getName());
+        membership.setBirthdate(dto.getBirthday());
+        membership.setGender(dto.getGender());
+        membership.setAddress(dto.getAddress());
+        membership.setPhoneNumber(dto.getPhoneNumber());
         // registeredByUserId가 null이면 자신의 ID를 등록자로 설정 (자가 등록)
-        member.setRegisteredByUserId(
+        membership.setRegisteredByUserId(
             dto.getRegisteredByUserId() != null
                 ? dto.getRegisteredByUserId()
                 : savedUser.getId()
         );
-        member.setIsDeleted(false);
-        Members savedMember = membersRepository.insert(member);
+        membership.setStatus("APPROVED");
+        membership.setIsDeleted(false);
+        Memberships savedMembership = membersRepository.insert(membership);
 
+        // 기본 역할 할당 (level=1)
+        Roles defaultRole = rolesRepository.fetchByOrgIdAndLevel(orgId, 1)
+                .orElseThrow(() -> new DataNotFoundException(
+                    String.format("조직 ID %d에 level=1 기본 역할이 없습니다", orgId)
+                ));
+
+        membershipRolesRepository.assignRole(
+            savedMembership.getId(),
+            defaultRole.getId(),
+            true,  // primary
+            savedUser.getId()
+        );
+
+        // appTypeId 가져오기
+        Organizations org = organizationsRepository.fetchById(orgId)
+                .orElseThrow(() -> new DataNotFoundException(
+                    String.format("조직 ID %d를 찾을 수 없습니다", orgId)
+                ));
+
+        // UserMemberDTO 반환
         return UserMemberDTO.builder()
                 .user(savedUser)
-                .member(savedMember)
-                .role(UserRole.fromCode(savedMember.getRole()))
+                .membership(savedMembership)
+                .roleIds(List.of(defaultRole.getId()))
+                .appTypeId(org.getAppTypeId())
                 .build();
     }
 
@@ -86,16 +118,16 @@ public class ChangeUserServiceImpl implements ChangeUserService {
             }
             userRepository.update(existingUser);
 
-            Members existingMember = membersRepository.fetchByUserId(userId)
+            Memberships existingMembership = membersRepository.fetchByUserId(userId)
                  .orElseThrow(() -> new RuntimeException("Member not found for user ID: " + userId)); // Or handle if member might not exist
 
             if (updateReq.getName() != null) {
-                existingMember.setName(updateReq.getName());
+                existingMembership.setName(updateReq.getName());
             }
             if (updateReq.getPicture() != null) {
-                existingMember.setPicture(updateReq.getPicture());
+                existingMembership.setPicture(updateReq.getPicture());
             }
-            membersRepository.update(existingMember);
+            membersRepository.update(existingMembership);
 
 
 
@@ -117,13 +149,28 @@ public class ChangeUserServiceImpl implements ChangeUserService {
             Users savedUser = userRepository.insert(newUser);
             finalUserId = savedUser.getId();
 
-            Members newMember = new Members();
-            newMember.setUserId(finalUserId);
-            newMember.setName(updateReq.getName());
-            newMember.setPicture(updateReq.getPicture());
-            newMember.setRole(updateReq.getRole() != null ? updateReq.getRole().getCode() : "GUEST");
-            newMember.setIsDeleted(false);
-            membersRepository.insert(newMember);
+            Long orgId = TenantContext.getRequiredOrgId();
+            Memberships newMembership = new Memberships();
+            newMembership.setOrgId(orgId);
+            newMembership.setUserId(finalUserId);
+            newMembership.setName(updateReq.getName());
+            newMembership.setPicture(updateReq.getPicture());
+            newMembership.setStatus("APPROVED");
+            newMembership.setIsDeleted(false);
+            Memberships savedMembership = membersRepository.insert(newMembership);
+
+            // 기본 역할 할당 (level=1)
+            Roles defaultRole = rolesRepository.fetchByOrgIdAndLevel(orgId, 1)
+                    .orElseThrow(() -> new DataNotFoundException(
+                        String.format("조직 ID %d에 level=1 기본 역할이 없습니다", orgId)
+                    ));
+
+            membershipRolesRepository.assignRole(
+                savedMembership.getId(),
+                defaultRole.getId(),
+                true,
+                savedUser.getId()
+            );
         }
 
         return userRepository.fetchUserWithDetailsById(finalUserId)

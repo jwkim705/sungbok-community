@@ -1,6 +1,6 @@
 package com.sungbok.community.repository;
 
-import static com.sungbok.community.repository.util.JooqTenantConditionUtils.appIdCondition;
+import static com.sungbok.community.repository.util.JooqTenantConditionUtils.orgIdCondition;
 import static org.jooq.generated.Tables.COMMENTS;
 import static org.jooq.generated.Tables.FILES;
 import static org.jooq.generated.Tables.POSTS;
@@ -20,7 +20,6 @@ import org.jooq.Field;
 import org.jooq.SortField;
 import org.jooq.generated.tables.daos.PostsDao;
 import org.jooq.generated.tables.pojos.Posts;
-import org.jooq.impl.DSL;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -62,7 +61,7 @@ public class PostsRepository {
         // 게시글 조회 (댓글, 파일, 유튜브 멀티셋 포함)
         List<GetPostResponseDTO> postList =
             dsl.select(
-                    POSTS.APP_ID,
+                    POSTS.ORG_ID,
                     POSTS.POST_ID,
                     POSTS.TITLE,
                     POSTS.CONTENT,
@@ -96,7 +95,7 @@ public class PostsRepository {
                             ,FILES.MODIFIED_BY
                         )
                         .from(FILES)
-                        .where(FILES.APP_ID.eq(POSTS.APP_ID))
+                        .where(FILES.ORG_ID.eq(POSTS.ORG_ID))
                         .and(FILES.RELATED_ENTITY_ID.eq(POSTS.POST_ID))
                         .and(FILES.RELATED_ENTITY_TYPE.eq("post"))
                         .and(FILES.IS_DELETED.eq(false))
@@ -113,7 +112,7 @@ public class PostsRepository {
                             ,POST_YOUTUBE.MODIFIED_BY
                         )
                         .from(POST_YOUTUBE)
-                        .where(POST_YOUTUBE.APP_ID.eq(POSTS.APP_ID))
+                        .where(POST_YOUTUBE.ORG_ID.eq(POSTS.ORG_ID))
                         .and(POST_YOUTUBE.POST_ID.eq(POSTS.POST_ID))
                         .and(POST_YOUTUBE.IS_DELETED.eq(false))
                     ).as("youtube")
@@ -131,7 +130,7 @@ public class PostsRepository {
     public GetPostResponseDTO fetchPostById(Long postId) {
         return
             dsl.select(
-                    POSTS.APP_ID,
+                    POSTS.ORG_ID,
                     POSTS.POST_ID,
                     POSTS.TITLE,
                     POSTS.CONTENT,
@@ -161,7 +160,7 @@ public class PostsRepository {
                             ,COMMENTS.MODIFIED_AT
                             ,COMMENTS.MODIFIED_BY
                         ).from(COMMENTS)
-                        .where(COMMENTS.APP_ID.eq(POSTS.APP_ID))
+                        .where(COMMENTS.ORG_ID.eq(POSTS.ORG_ID))
                         .and(COMMENTS.POST_ID.eq(POSTS.POST_ID))
                         .and(COMMENTS.IS_DELETED.eq(false))
                         .orderBy(COMMENTS.CREATED_AT.asc())
@@ -185,7 +184,7 @@ public class PostsRepository {
                             ,FILES.MODIFIED_BY
                         )
                         .from(FILES)
-                        .where(FILES.APP_ID.eq(POSTS.APP_ID))
+                        .where(FILES.ORG_ID.eq(POSTS.ORG_ID))
                         .and(FILES.RELATED_ENTITY_ID.eq(POSTS.POST_ID))
                         .and(FILES.RELATED_ENTITY_TYPE.eq("post"))
                         .and(FILES.IS_DELETED.eq(false))
@@ -202,13 +201,13 @@ public class PostsRepository {
                             ,POST_YOUTUBE.MODIFIED_BY
                         )
                         .from(POST_YOUTUBE)
-                        .where(POST_YOUTUBE.APP_ID.eq(POSTS.APP_ID))
+                        .where(POST_YOUTUBE.ORG_ID.eq(POSTS.ORG_ID))
                         .and(POST_YOUTUBE.POST_ID.eq(POSTS.POST_ID))
                         .and(POST_YOUTUBE.IS_DELETED.eq(false))
                     ).as("youtube")
         )
         .from(POSTS)
-        .where(appIdCondition(POSTS.APP_ID))
+        .where(orgIdCondition(POSTS.ORG_ID))
         .and(POSTS.POST_ID.eq(postId))
         .and(POSTS.IS_DELETED.eq(false))
         .fetchOneInto(GetPostResponseDTO.class);
@@ -223,13 +222,11 @@ public class PostsRepository {
      */
     public Posts insert(Posts post) {
         // TenantContext에서 app_id 가져오기
-        Long appId = TenantContext.getRequiredAppId();
-        post.setAppId(appId);  // 강제로 현재 테넌트 설정
+        Long orgId = TenantContext.getRequiredOrgId();
+        post.setOrgId(orgId);  // 강제로 현재 테넌트 설정
 
-        return dsl.insertInto(POSTS)
-                .set(dsl.newRecord(POSTS, post))
-                .returning()
-                .fetchOneInto(Posts.class);
+        dao.insert(post);  // DAO 패턴
+        return post;
     }
 
     /**
@@ -246,7 +243,7 @@ public class PostsRepository {
                 .set(POSTS.CATEGORY_NM, post.getCategoryNm())
                 .set(POSTS.MODIFIED_AT, LocalDateTime.now())
                 .set(POSTS.MODIFIED_BY, post.getModifiedBy())
-                .where(appIdCondition(POSTS.APP_ID))
+                .where(orgIdCondition(POSTS.ORG_ID))
                 .and(POSTS.POST_ID.eq(post.getPostId()))
                 .and(POSTS.IS_DELETED.eq(false))
                 .execute();
@@ -265,7 +262,7 @@ public class PostsRepository {
                 .set(POSTS.IS_DELETED, true)
                 .set(POSTS.MODIFIED_AT, LocalDateTime.now())
                 .set(POSTS.MODIFIED_BY, userId)
-                .where(appIdCondition(POSTS.APP_ID))
+                .where(orgIdCondition(POSTS.ORG_ID))
                 .and(POSTS.POST_ID.eq(postId))
                 .execute();
     }
@@ -280,7 +277,7 @@ public class PostsRepository {
     public int incrementViewCount(Long postId) {
         return dsl.update(POSTS)
                 .set(POSTS.VIEW_COUNT, POSTS.VIEW_COUNT.add(1))
-                .where(appIdCondition(POSTS.APP_ID))
+                .where(orgIdCondition(POSTS.ORG_ID))
                 .and(POSTS.POST_ID.eq(postId))
                 .and(POSTS.IS_DELETED.eq(false))
                 .execute();
@@ -297,7 +294,7 @@ public class PostsRepository {
     public boolean isPostOwnedByUser(Long postId, Long userId) {
         return dsl.fetchExists(
                 POSTS,
-                appIdCondition(POSTS.APP_ID)
+                orgIdCondition(POSTS.ORG_ID)
                         .and(POSTS.POST_ID.eq(postId))
                         .and(POSTS.USER_ID.eq(userId))
                         .and(POSTS.IS_DELETED.eq(false))
@@ -306,7 +303,7 @@ public class PostsRepository {
 
     private Condition createSearchCondition(String search) {
         // 기본 조건: app_id 필터링 + 소프트 삭제되지 않은 게시글
-        Condition baseCondition = appIdCondition(POSTS.APP_ID)
+        Condition baseCondition = orgIdCondition(POSTS.ORG_ID)
                 .and(POSTS.IS_DELETED.eq(false));
 
         // 검색어가 있으면 제목 또는 내용에서 검색

@@ -1,6 +1,5 @@
 package com.sungbok.community.dto;
 
-import com.sungbok.community.enums.UserRole;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,14 +22,11 @@ public class UpdateMember implements Serializable {
 
     private String name;
 
-    private UserRole role;
-
     @Builder
-    public UpdateMember(Long id, String picture, String name, UserRole role) {
+    public UpdateMember(Long id, String picture, String name) {
         this.id = id;
         this.picture = picture;
         this.name = name;
-        this.role = role;
     }
 
 }

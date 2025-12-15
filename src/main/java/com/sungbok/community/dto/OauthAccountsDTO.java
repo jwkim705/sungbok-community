@@ -18,14 +18,18 @@ public class OauthAccountsDTO implements Serializable {
     private static final long serialVersionUID = 6387745589670666639L;
 
     private Long id;
+    private Long orgId;
     private Long userId;
     private SocialType socialType;
+    private String providerUserId;
 
     @Builder
     public OauthAccountsDTO(OauthAccounts oauthAccounts, Users user){
         this.id = oauthAccounts.getId();
+        this.orgId = oauthAccounts.getOrgId();
         this.userId = user.getId();
         this.socialType = SocialType.fromCode(oauthAccounts.getSocialType());
+        this.providerUserId = oauthAccounts.getProviderUserId();
     }
 
     public static OauthAccountsDTO of(OauthAccounts oauthAccounts) {

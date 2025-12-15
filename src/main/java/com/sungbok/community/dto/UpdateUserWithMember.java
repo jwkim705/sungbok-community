@@ -1,6 +1,5 @@
 package com.sungbok.community.dto;
 
-import com.sungbok.community.enums.UserRole;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,7 +26,5 @@ public class UpdateUserWithMember implements Serializable {
     private String name;
 
     private String picture;
-
-    private UserRole role;
 
 }

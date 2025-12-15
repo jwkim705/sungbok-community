@@ -1,5 +1,6 @@
 package com.sungbok.community.security.jwt;
 
+import com.sungbok.community.common.exception.BadRequestException;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.security.TenantContext;
@@ -20,6 +21,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * JWT 인증 필터
@@ -36,6 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final JwtProperties jwtProperties;
+    private final TenantResolver tenantResolver;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -47,38 +50,110 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // 2. 토큰이 존재하고 유효한 경우 인증 처리
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                // 3. 토큰에서 이메일과 appId 추출
+                // 3. 토큰에서 이메일과 orgId 추출
                 String email = jwtTokenProvider.getEmailFromToken(jwt);
-                Long appId = jwtTokenProvider.getAppIdFromToken(jwt);
+                Long orgId = jwtTokenProvider.getOrgIdFromToken(jwt);
 
-                // 4. TenantContext에 appId 설정 (ThreadLocal)
-                TenantContext.setAppId(appId);
+                // ⚠️ Guest JWT 처리 (orgId=null)
+                if (orgId == null) {
+                    // Guest JWT: 인증은 되었지만 조직에 속하지 않음
+                    // 플랫폼 레벨 API만 허용
+                    String requestURI = request.getRequestURI();
+                    boolean isPlatformApi = requestURI.endsWith("/organizations")
+                                         || requestURI.endsWith("/app-types")
+                                         || requestURI.matches(".*/organizations/[0-9]+/join")
+                                         || requestURI.endsWith("/memberships/me");
 
-                // 5. 데이터베이스에서 사용자 정보 조회 (appId로 필터링됨)
-                UserMemberDTO user = userRepository.fetchUserWithDetailsByEmail(email)
-                        .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
+                    if (!isPlatformApi) {
+                        log.error("Guest JWT는 플랫폼 레벨 API만 접근 가능: {}", requestURI);
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                            "Guest user. Please join an organization first.");
+                        return;  // 필터 체인 중단
+                    }
 
-                // 6. appId 검증 (JWT의 appId와 DB의 appId가 일치하는지)
-                if (!appId.equals(user.getAppId())) {
-                    log.error("Token appId mismatch: JWT={}, DB={}", appId, user.getAppId());
-                    throw new IllegalStateException("Token appId mismatch");
-                }
+                    // Guest 인증 정보 설정 (orgId 없이)
+                    UserMemberDTO guestUser = new UserMemberDTO(
+                        null,  // orgId (Guest 사용자)
+                        jwtTokenProvider.getUserIdFromToken(jwt),
+                        email,
+                        jwtTokenProvider.getNameFromToken(jwt),
+                        null, null, null, null, null, null, null, null,
+                        List.of()  // roleIds (빈 리스트)
+                    );
 
-                // 7. PrincipalDetails 생성
-                PrincipalDetails principalDetails = new PrincipalDetails(user);
-
-                // 8. Authentication 객체 생성
-                UsernamePasswordAuthenticationToken authentication =
+                    PrincipalDetails principalDetails = new PrincipalDetails(guestUser);
+                    UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                principalDetails,
-                                null,  // credentials (JWT에서는 불필요)
-                                principalDetails.getAuthorities()
-                        );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            principalDetails, null, principalDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("Guest JWT 인증 성공: {}", email);
 
-                // 9. SecurityContext에 인증 정보 설정
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("JWT 인증 성공: {} (appId={})", email, appId);
+                } else {
+                    // AUTHENTICATED: JWT's orgId is authoritative
+
+                    // 4. TenantContext에 orgId 설정 (ThreadLocal)
+                    TenantContext.setOrgId(orgId);
+
+                    // 5. 데이터베이스에서 사용자 정보 조회 (orgId로 필터링됨)
+                    UserMemberDTO user = userRepository.fetchUserWithDetailsByEmail(email)
+                            .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
+
+                    // 6. orgId 검증 (JWT의 orgId와 DB의 orgId가 일치하는지)
+                    if (!orgId.equals(user.getOrgId())) {
+                        log.error("Token orgId mismatch: JWT={}, DB={}", orgId, user.getOrgId());
+                        throw new IllegalStateException("Token orgId mismatch");
+                    }
+
+                    // 7. PrincipalDetails 생성
+                    PrincipalDetails principalDetails = new PrincipalDetails(user);
+
+                    // 8. Authentication 객체 생성
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    principalDetails,
+                                    null,  // credentials (JWT에서는 불필요)
+                                    principalDetails.getAuthorities()
+                            );
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    // 9. SecurityContext에 인증 정보 설정
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("JWT 인증 성공: {} (orgId={})", email, orgId);
+                }
+            } else {
+                // GUEST MODE: X-Org-Id 헤더로 조직 해결
+                // 플랫폼 레벨 API 및 OAuth 로그인은 X-Org-Id 선택적
+                String requestURI = request.getRequestURI();
+                // MockMvc 테스트에서는 context path 없이 "/organizations"로 들어오고,
+                // 실제 배포에서는 "/api/organizations"로 들어올 수 있음
+                boolean isPlatformLevelApi = requestURI.endsWith("/organizations")
+                                          || requestURI.endsWith("/app-types")
+                                          || requestURI.contains("/auth/login/");  // OAuth 로그인 엔드포인트
+
+                if (isPlatformLevelApi) {
+                    // 플랫폼 레벨 API: X-Org-Id 선택적 (있으면 사용, 없어도 허용)
+                    try {
+                        Long orgId = tenantResolver.resolveOrgId(request);
+                        TenantContext.setOrgId(orgId);
+                        log.debug("플랫폼 레벨 API 접근 (X-Org-Id 제공됨): orgId={}", requestURI);
+                    } catch (BadRequestException e) {
+                        // X-Org-Id 없어도 허용
+                        log.debug("플랫폼 레벨 API 접근 (X-Org-Id 없음): {}", requestURI);
+                    }
+                } else {
+                    // 일반 Guest mode API: X-Org-Id 필수
+                    try {
+                        Long orgId = tenantResolver.resolveOrgId(request);
+                        TenantContext.setOrgId(orgId);
+                        log.debug("Guest 모드: orgId={}", orgId);
+                    } catch (BadRequestException e) {
+                        log.error("Guest 모드 검증 실패: {}", e.getMessage());
+                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+                        return;  // 필터 체인 중단
+                    }
+                }
+                // No authentication - guest user (read-only)
             }
         } catch (Exception e) {
             // 인증 실패 시 로그만 남기고 TenantContext 정리

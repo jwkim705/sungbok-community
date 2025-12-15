@@ -5,37 +5,39 @@ import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 
 @Getter
-public class PrincipalDetails implements UserDetails, OAuth2User {
+public class PrincipalDetails implements UserDetails {
 
   @Serial
   private static final long serialVersionUID = 1954914298684455486L;
 
   private final UserMemberDTO user;
-  private Map<String, Object> attributes;
 
-  //일반 로그인
+  // Form 로그인 (이메일/비밀번호)
   public PrincipalDetails(UserMemberDTO user) {
     this.user = user;
-  }
-
-  //OAuth 로그인
-  public PrincipalDetails(UserMemberDTO user, Map<String, Object> attributes) {
-    this.user = user;
-    this.attributes = attributes;
   }
 
   //권한을 리턴
   public Collection<? extends GrantedAuthority> getAuthorities() {
     Collection<GrantedAuthority> authorities = new ArrayList<>();
-    authorities.add(new SimpleGrantedAuthority(user.getRole().getCode()));
+
+    // 다중 역할 지원
+    List<Long> roleIds = user.getRoleIds();
+    if (roleIds == null || roleIds.isEmpty()) {
+      authorities.add(new SimpleGrantedAuthority("ROLE_GUEST"));
+    } else {
+      for (Long roleId : roleIds) {
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + roleId));
+      }
+    }
+
     return authorities;
   }
 
@@ -50,17 +52,21 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
     return user.getEmail();
   }
 
-  //OAuth2
-  @Override
-  public Map<String, Object> getAttributes() {
-    return attributes;
+  /**
+   * 권한 체크를 위한 대표 role ID 반환
+   * @return 대표 role ID (첫번째 역할, 없으면 null)
+   */
+  public Long getRoleId() {
+    List<Long> roleIds = user.getRoleIds();
+    return (roleIds != null && !roleIds.isEmpty()) ? roleIds.getFirst() : null;
   }
 
-  @Override
-  public String getName() {
-    // OAuth2에서는 고유 식별자를 반환하는 것이 일반적이나, 여기서는 사용자 이름을 반환
-    // return attributes != null ? (String) attributes.get("sub") : user.getEmail(); // 예시
-    return user.getName(); // 현재 DTO의 name 필드 사용
+  /**
+   * 모든 역할 ID 목록 반환
+   * @return 역할 ID 목록
+   */
+  public List<Long> getRoleIds() {
+    return user.getRoleIds();
   }
 
   // --- UserDetails 기본 구현 메서드 ---

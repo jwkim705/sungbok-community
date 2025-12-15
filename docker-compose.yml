@@ -40,21 +40,21 @@ services:
     networks:
       - servernetwork
 
-  jenkins:
-    container_name: jenkins
-    image: jenkins/agent:latest-jdk25
-    environment:
-      - TZ=Asia/Seoul
-      - JAVA_OPS=-Xmx4g
-    user: root
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /volume1/docker/jenkins:/var/jenkins_home
-    ports:
-      - "9090:8080"
-      - "50000:50000"
-    networks:
-      - servernetwork
+#  jenkins:
+#    container_name: jenkins
+#    image: jenkins/agent:latest-jdk25
+#    environment:
+#      - TZ=Asia/Seoul
+#      - JAVA_OPS=-Xmx4g
+#    user: root
+#    volumes:
+#      - /var/run/docker.sock:/var/run/docker.sock
+#      - /volume1/docker/jenkins:/var/jenkins_home
+#    ports:
+#      - "9090:8080"
+#      - "50000:50000"
+#    networks:
+#      - servernetwork
 
   redisinsight:
     image: redis/redisinsight:latest

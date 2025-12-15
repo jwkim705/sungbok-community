@@ -37,4 +37,22 @@ out/
 ### VS Code ###
 .vscode/
 
+### Docker Compose ###
+docker-compose.override.yml
+
 /src/main/resources/application-prod.yml
+
+# Logs
+logs/
+*.log
+
+# jOOQ Generated
+src/generated/
+build/generated-src/
+
+# JWT Keys (민감한 정보 - 절대 커밋하지 말것!)
+src/main/resources/keys/*.pem
+
+# Environment Variables
+.env
+.env.local

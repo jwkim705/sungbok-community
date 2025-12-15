@@ -11,7 +11,6 @@ import com.sungbok.community.security.jwt.JwtAuthenticationEntryPoint;
 import com.sungbok.community.security.jwt.JwtAuthenticationFilter;
 import com.sungbok.community.security.provider.AuthProvider;
 import com.sungbok.community.security.provider.CustomAuthenticationProvider;
-import com.sungbok.community.security.service.impl.Oauth2UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -51,7 +50,6 @@ public class WebSecurityConfig {
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
     private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
     private final CustomAuthenticationFailHandler customAuthenticationFailHandler;
-    private final Oauth2UserDetailsServiceImpl oauth2UserDetailsService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {
@@ -70,16 +68,18 @@ public class WebSecurityConfig {
                         // 공개 접근 엔드포인트
                         authorize.requestMatchers("/health-check").permitAll();
                         authorize.requestMatchers("/users/signup").permitAll();
-                        authorize.requestMatchers(HttpMethod.GET, "/posts", "/posts/**").permitAll(); // GET /api/posts, /api/posts/{postId} - 게시글 조회
+
+                        // Guest mode endpoints (X-Org-Id header 기반 읽기 전용)
+                        authorize.requestMatchers(HttpMethod.GET, "/organizations", "/organizations/**").permitAll();
+                        authorize.requestMatchers(HttpMethod.GET, "/posts", "/posts/**").permitAll();
+                        authorize.requestMatchers(HttpMethod.GET, "/comments", "/comments/**").permitAll();
+                        authorize.requestMatchers(HttpMethod.GET, "/app-types", "/app-types/**").permitAll();
 
                         // JWT 인증 엔드포인트
                         authorize.requestMatchers("/auth/**").permitAll();
 
-                        // 로그인/로그아웃 엔드포인트
+                        // 로그인/로그아웃 엔드포인트 (Form 로그인)
                         authorize.requestMatchers("/login", "/logout").permitAll();
-
-                        // OAuth2 로그인 엔드포인트
-                        authorize.requestMatchers("/oauth2/**", "/login/oauth2/code/**").permitAll();
 
                         // API 문서
                         authorize.requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
@@ -88,6 +88,12 @@ public class WebSecurityConfig {
                         if ("local".equals(activeProfile) || "test".equals(activeProfile)) {
                             authorize.requestMatchers("/h2-console/**").permitAll();
                         }
+
+                        // 모든 쓰기 작업은 인증 필요
+                        authorize.requestMatchers(HttpMethod.POST, "/**").authenticated();
+                        authorize.requestMatchers(HttpMethod.PUT, "/**").authenticated();
+                        authorize.requestMatchers(HttpMethod.DELETE, "/**").authenticated();
+                        authorize.requestMatchers(HttpMethod.PATCH, "/**").authenticated();
 
                         // 나머지 모든 요청은 인증 필요
                         authorize.anyRequest().authenticated();
@@ -100,14 +106,6 @@ public class WebSecurityConfig {
                         .cacheControl(withDefaults()) // Cache-Control: no-cache, no-store, max-age=0, must-revalidate
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin) // X-Frame-Options: SAMEORIGIN
                         .httpStrictTransportSecurity(HeadersConfigurer.HstsConfig::disable)
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .redirectionEndpoint(redirection -> redirection
-                                .baseUri("/login/oauth2/code/*"))
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(oauth2UserDetailsService))
-                        .successHandler(customAuthenticationSuccessHandler)
-                        .failureHandler(customAuthenticationFailHandler)
                 )
                 .formLogin(configurer ->
                         configurer

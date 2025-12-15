@@ -3,8 +3,7 @@ package com.sungbok.community.controller;
 import com.sungbok.community.common.constant.UriConstant;
 import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.dto.UserMemberDTO;
-import com.sungbok.community.dto.auth.RefreshTokenRequest;
-import com.sungbok.community.dto.auth.TokenResponse;
+import com.sungbok.community.dto.auth.*;
 import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.security.jwt.JwtTokenProvider;
 import com.sungbok.community.security.jwt.RefreshTokenService;
@@ -19,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * JWT 인증 컨트롤러
- * 토큰 갱신, 로그아웃, 사용자 정보 조회
+ * OAuth2 소셜 로그인, 토큰 갱신, 로그아웃, 사용자 정보 조회
  *
  * @since 0.0.1
  */
@@ -32,6 +31,7 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
+    private final com.sungbok.community.service.oauth.OAuthLoginService oauthLoginService;  // OAuth 2.1 Strategy Pattern
 
     /**
      * POST /auth/refresh
@@ -62,7 +62,7 @@ public class AuthController {
         }
 
         // 4. 사용자 정보 조회
-        UserMemberDTO user = userRepository.fetchUserWithDetailsByEmail(email)
+        UserMemberDTO user = userRepository.fetchUserByEmailForAuthentication(email)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다: " + email));
 
         // 5. 새로운 Access Token 생성
@@ -106,5 +106,29 @@ public class AuthController {
     public ResponseEntity<OkResponseDTO> getCurrentUser(Authentication authentication) {
         UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         return ResponseEntity.ok(OkResponseDTO.of(200, "User info retrieved", user));
+    }
+
+    /**
+     * POST /auth/login/{provider}
+     * OAuth2 소셜 로그인 (통합 엔드포인트, OAuth 2.1 표준)
+     * Strategy Pattern 적용: 단일 엔드포인트로 모든 소셜 로그인 처리
+     *
+     * @param provider 소셜 공급자 (google, kakao, naver)
+     * @param request OAuth2 Authorization Code
+     * @return JWT 토큰 (Access + Refresh)
+     */
+    @PostMapping("/login/{provider}")
+    public ResponseEntity<OkResponseDTO> loginWithOAuth(
+        @PathVariable String provider,
+        @RequestBody @Valid OAuth2CodeRequest request) {
+
+        // OAuthLoginService가 provider에 맞는 구현체를 찾아서 실행
+        TokenResponse tokenResponse = oauthLoginService.login(
+            provider,
+            request.getCode(),
+            request.getCodeVerifier()
+        );
+
+        return ResponseEntity.ok(OkResponseDTO.of(200, "Login successful", tokenResponse));
     }
 }

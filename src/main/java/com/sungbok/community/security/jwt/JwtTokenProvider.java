@@ -18,6 +18,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 /**
  * JWT 토큰 생성 및 검증 Provider
@@ -53,7 +54,7 @@ public class JwtTokenProvider {
 
     /**
      * Access Token 생성 (15분)
-     * app_id를 JWT 클레임에 포함
+     * orgId, appTypeId, roleIds를 JWT 클레임에 포함
      *
      * @param user 사용자 정보
      * @return JWT Access Token
@@ -64,10 +65,11 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .subject(user.getEmail())  // 주체: 이메일
-                .claim("appId", user.getAppId())  // 테넌트 ID
                 .claim("userId", user.getUserId())  // 사용자 ID
+                .claim("orgId", user.getOrgId())  // 현재 활성화된 조직 ID
+                .claim("roleIds", user.getRoleIds())  // 역할 ID 배열 (권한 체크용)
+                .claim("appTypeId", user.getAppTypeId())  // 조직 타입 ID
                 .claim("name", user.getName())  // 사용자 이름
-                .claim("role", user.getRole().getCode())  // 사용자 역할
                 .issuer(jwtProperties.getIssuer())  // 발급자
                 .issuedAt(now)  // 발급 시간
                 .expiration(expiryDate)  // 만료 시간
@@ -117,34 +119,94 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰에서 role 추출 (Access Token만 해당)
+     * 토큰에서 roleIds 추출 (Access Token만 해당)
      *
      * @param token JWT 토큰
-     * @return 사용자 역할
+     * @return 역할 ID 목록
      */
-    public String getRoleFromToken(String token) {
+    public List<Long> getRoleIdsFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
-        return claims.get("role", String.class);
+        List<?> roleIdsList = claims.get("roleIds", List.class);
+
+        if (roleIdsList == null) {
+            return List.of();
+        }
+
+        return roleIdsList.stream()
+                .map(obj -> {
+                    if (obj instanceof Integer) {
+                        return ((Integer) obj).longValue();
+                    } else if (obj instanceof Long) {
+                        return (Long) obj;
+                    }
+                    return null;
+                })
+                .filter(id -> id != null)
+                .toList();
     }
 
     /**
-     * 토큰에서 appId 추출 (Access Token만 해당)
+     * 토큰에서 orgId 추출 (Access Token만 해당)
+     * ⚠️ Guest JWT는 orgId=null 허용
      *
      * @param token JWT 토큰
-     * @return 테넌트 app ID
+     * @return 테넌트 org ID (Guest JWT인 경우 null)
      */
-    public Long getAppIdFromToken(String token) {
+    public Long getOrgIdFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
-        Object appIdObj = claims.get("appId");
+        Object orgIdObj = claims.get("orgId");
+
+        // ⚠️ Guest JWT: orgId가 없으면 null 반환
+        if (orgIdObj == null) {
+            return null;
+        }
 
         // Integer와 Long 타입 모두 처리
-        if (appIdObj instanceof Integer) {
-            return ((Integer) appIdObj).longValue();
-        } else if (appIdObj instanceof Long) {
-            return (Long) appIdObj;
+        if (orgIdObj instanceof Integer) {
+            return ((Integer) orgIdObj).longValue();
+        } else if (orgIdObj instanceof Long) {
+            return (Long) orgIdObj;
         } else {
-            throw new IllegalStateException("appId claim is missing or has invalid type");
+            throw new IllegalStateException("orgId claim has invalid type");
         }
+    }
+
+    /**
+     * 토큰에서 appTypeId 추출 (Access Token만 해당)
+     * ⚠️ Guest JWT는 appTypeId=null 허용
+     *
+     * @param token JWT 토큰
+     * @return 조직 타입 ID (Guest JWT인 경우 null)
+     */
+    public Long getAppTypeIdFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        Object appTypeIdObj = claims.get("appTypeId");
+
+        // ⚠️ Guest JWT: appTypeId가 없으면 null 반환
+        if (appTypeIdObj == null) {
+            return null;
+        }
+
+        // Integer와 Long 타입 모두 처리
+        if (appTypeIdObj instanceof Integer) {
+            return ((Integer) appTypeIdObj).longValue();
+        } else if (appTypeIdObj instanceof Long) {
+            return (Long) appTypeIdObj;
+        } else {
+            throw new IllegalStateException("appTypeId claim has invalid type");
+        }
+    }
+
+    /**
+     * 토큰에서 name 추출 (Access Token만 해당)
+     * ⚠️ Guest JWT는 name=null 허용
+     *
+     * @param token JWT 토큰
+     * @return 사용자 이름 (Guest JWT인 경우 null 가능)
+     */
+    public String getNameFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.get("name", String.class);
     }
 
     /**
