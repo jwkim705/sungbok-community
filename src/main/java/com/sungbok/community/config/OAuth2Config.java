@@ -20,16 +20,15 @@ public class OAuth2Config {
      * Spring Boot 4.0의 권장 방식 (RestTemplate 대체)
      * HTTP 엔진으로 JDK HttpClient 사용
      *
-     * @param builder RestClient.Builder
      * @return 설정된 RestClient 인스턴스
      */
     @Bean
-    public RestClient restClient(RestClient.Builder builder) {
+    public RestClient restClient() {
         java.net.http.HttpClient httpClient = java.net.http.HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
 
-        return builder
+        return RestClient.builder()
                 .requestFactory(new JdkClientHttpRequestFactory(httpClient))
                 .build();
     }

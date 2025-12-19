@@ -23,7 +23,7 @@ class GuestModeE2ETest extends BaseIntegrationTest {
         mockMvc.perform(get("/organizations"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$").isArray());
 
         // 2. Guest가 조직 선택 후 조직 상세 조회
         Long orgId = testDataManager.getTestOrgId();
@@ -31,7 +31,7 @@ class GuestModeE2ETest extends BaseIntegrationTest {
                         .header("X-Org-Id", orgId))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.orgId").value(orgId));
+                .andExpect(jsonPath("$.orgId").value(orgId));
 
         // 3. Guest가 선택한 조직의 게시글 조회
         mockMvc.perform(get("/posts")
@@ -42,7 +42,7 @@ class GuestModeE2ETest extends BaseIntegrationTest {
                         .param("direction", "desc"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$").exists());
 
         // 4. Guest가 게시글 작성 시도 → 401 Unauthorized
         mockMvc.perform(post("/posts")
@@ -67,12 +67,15 @@ class GuestModeE2ETest extends BaseIntegrationTest {
     }
 
     @Test
-    @DisplayName("Guest 모드 - 잘못된 X-Org-Id 형식 - 400 에러")
-    void testGuestMode_InvalidOrgIdFormat_ShouldReturn400() throws Exception {
+    @DisplayName("Guest 모드 - 잘못된 X-Org-Id 형식 - 404 에러")
+    void testGuestMode_InvalidOrgIdFormat_ShouldReturn404() throws Exception {
         // When & Then
         mockMvc.perform(get("/posts")
                         .header("X-Org-Id", "invalid"))
                 .andDo(print())
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.title").value("NOT_FOUND"))
+                .andExpect(jsonPath("$.code").value("TEN_001"));
     }
 }

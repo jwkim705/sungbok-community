@@ -1,28 +1,24 @@
 package com.sungbok.community.repository;
 
-import com.sungbok.community.dto.UserMemberDTO;
-import org.jooq.Configuration;
-import org.jooq.DSLContext;
-import org.jooq.generated.tables.daos.UsersDao;
-import org.jooq.generated.tables.pojos.Users;
-import org.jooq.generated.tables.records.MembershipsRecord;
-import org.jooq.generated.tables.records.MembershipRolesRecord;
-import org.jooq.generated.tables.records.OauthAccountsRecord;
-import org.jooq.generated.tables.records.UsersRecord;
-import org.jooq.impl.DSL;
-import org.springframework.stereotype.Repository;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
 import static com.sungbok.community.repository.util.JooqTenantConditionUtils.orgIdCondition;
 import static org.jooq.generated.Tables.MEMBERSHIPS;
 import static org.jooq.generated.Tables.MEMBERSHIP_ROLES;
-import static org.jooq.generated.Tables.OAUTH_ACCOUNTS;
 import static org.jooq.generated.Tables.ORGANIZATIONS;
 import static org.jooq.generated.Tables.ROLES;
 import static org.jooq.generated.Tables.USERS;
+
+import com.sungbok.community.dto.UserMemberDTO;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import org.jooq.Configuration;
+import org.jooq.generated.enums.MembershipStatus;
+import org.jooq.generated.enums.OrganizationStatus;
+import org.jooq.DSLContext;
+import org.jooq.generated.tables.daos.UsersDao;
+import org.jooq.generated.tables.pojos.Users;
+import org.jooq.generated.tables.records.UsersRecord;
+import org.jooq.impl.DSL;
+import org.springframework.stereotype.Repository;
 
 /**
  * 사용자 데이터 접근 Repository
@@ -177,164 +173,126 @@ public class UserRepository {
   }
 
   /**
-   * 인증 시점에 사용할 이메일로 사용자 조회 (TenantContext 불필요)
-   *
-   * ⚠️ 경고: 이 메서드는 인증(Authentication) 시점에만 사용해야 합니다.
-   * - TenantContext가 설정되기 전에 호출되는 용도
-   * - 승인된(APPROVED) 멤버십만 조회
-   * - PRIMARY 멤버십 우선 선택 (다중 조직 사용자)
-   *
-   * 일반적인 비즈니스 로직에서는 fetchUserWithDetailsByEmail()을 사용하세요.
-   *
-   * @param email 사용자 이메일
-   * @return 사용자 상세 정보 Optional (없거나 승인되지 않은 멤버십만 있으면 빈 Optional)
-   */
-  public Optional<UserMemberDTO> fetchUserByEmailForAuthentication(String email) {
-      return dslContext.select(
-                      MEMBERSHIPS.ORG_ID,
-                      USERS.ID,
-                      USERS.EMAIL,
-                      MEMBERSHIPS.NAME,
-                      USERS.PASSWORD,
-                      MEMBERSHIPS.BIRTHDATE,
-                      MEMBERSHIPS.GENDER,
-                      MEMBERSHIPS.ADDRESS,
-                      MEMBERSHIPS.PHONE_NUMBER,
-                      MEMBERSHIPS.PICTURE,
-                      MEMBERSHIPS.REGISTERED_BY_USER_ID,
-                      ORGANIZATIONS.APP_TYPE_ID,
-                      DSL.multiset(
-                              DSL.select(MEMBERSHIP_ROLES.ROLE_ID)
-                                      .from(MEMBERSHIP_ROLES)
-                                      .where(MEMBERSHIP_ROLES.ORG_ID.eq(MEMBERSHIPS.ORG_ID))
-                                      .and(MEMBERSHIP_ROLES.MEMBERSHIP_ID.eq(MEMBERSHIPS.ID))
-                                      .orderBy(MEMBERSHIP_ROLES.IS_PRIMARY.desc())
-                      ).convertFrom(r -> r.into(Long.class)).as("roleIds")
-              )
-              .from(USERS)
-              .join(MEMBERSHIPS).on(MEMBERSHIPS.USER_ID.eq(USERS.ID))
-              .join(ORGANIZATIONS).on(ORGANIZATIONS.ORG_ID.eq(MEMBERSHIPS.ORG_ID))
-              .where(USERS.EMAIL.eq(email))
-              .and(USERS.IS_DELETED.eq(false))
-              .and(MEMBERSHIPS.STATUS.eq("APPROVED"))
-              .limit(1)
-              .fetchOptionalInto(UserMemberDTO.class);
-  }
-
-  /**
-   * is_deleted 플래그를 설정하여 사용자를 소프트 삭제합니다.
-   * DSLContext.update() 패턴 사용 (app_id로 격리)
+   * is_deleted 플래그를 설정하여 사용자를 소프트 삭제합니다. DSLContext.update() 패턴 사용 (app_id로 격리)
    *
    * @param userId 소프트 삭제할 사용자 ID
-   * @return 영향받은 행 수
    */
-  public int softDelete(Long userId) {
-      return dslContext.update(USERS)
-              .set(USERS.IS_DELETED, true)
-              .set(USERS.MODIFIED_AT, LocalDateTime.now())
-              .where(USERS.ID.eq(userId))
-              .execute();
+  public void softDelete(Long userId) {
+      dslContext.update(USERS)
+          .set(USERS.IS_DELETED, true)
+          .set(USERS.MODIFIED_AT, LocalDateTime.now())
+          .where(USERS.ID.eq(userId))
+          .execute();
   }
 
   /**
-   * OAuth2 사용자 조회 또는 생성 (OAuth 2.1 표준 + Guest JWT 지원)
-   * jOOQ store() 메서드를 활용한 "find or create" 패턴
+   * OAuth2 사용자 Upsert (조회 없이 한 번에 처리)
    *
-   * ⚠️ 변경사항 (2025-12-15):
-   * - OAuth 로그인 시 users 테이블만 생성 (플랫폼 레벨)
-   * - memberships, oauth_accounts는 가입 요청 시점에 생성
-   * - Guest JWT 발급 (orgId=null, roleIds=[])
+   * PostgreSQL ON CONFLICT 활용:
+   * - 신규 사용자: INSERT
+   * - 기존 사용자: modified_at 업데이트
    *
-   * @param provider OAuth2 공급자 (google, kakao, naver)
-   * @param providerId OAuth2 공급자의 사용자 ID
    * @param email 이메일
-   * @param name 이름
-   * @param picture 프로필 사진 URL
-   * @return Guest 사용자 정보 (orgId=null, roleIds=[])
+   * @param name OAuth에서 가져온 이름 (미사용, 향후 확장용)
+   * @param picture 프로필 사진 URL (미사용, 향후 확장용)
+   * @return Users POJO (플랫폼 레벨 사용자 정보만)
    */
-  public UserMemberDTO findOrCreateOAuthUser(
-      String provider,
-      String providerId,
-      String email,
-      String name,
-      String picture
-  ) {
-      // ⚠️ orgId 제거: OAuth 로그인은 플랫폼 레벨
+  public Users upsertOAuthUser(String email, String name, String picture) {
+      LocalDateTime now = LocalDateTime.now();
 
-      // 1. 이메일로 사용자 조회 (find)
-      UsersRecord userRecord = dslContext
-          .selectFrom(USERS)
-          .where(USERS.EMAIL.eq(email))
-          .fetchOne();
-
-      if (userRecord == null) {
-          // 신규 가입: 새 사용자 생성 (create)
-          userRecord = dslContext.newRecord(USERS);
-          userRecord.setEmail(email);
-          userRecord.setPassword(null);  // OAuth 사용자는 비밀번호 없음
-          userRecord.setIsDeleted(false);
-          userRecord.setCreatedAt(LocalDateTime.now());
-      }
-
-      // 공통: modified_at 업데이트 (로그인마다 갱신)
-      userRecord.setModifiedAt(LocalDateTime.now());
-      userRecord.store();  // ✅ store() - PK 유무로 INSERT or UPDATE 자동 판단
-
-      Long userId = userRecord.getId();
-
-      // 2. Guest DTO 반환 (orgId=null, roleIds=[])
-      // memberships, oauth_accounts, roles는 가입 요청 시점에 생성됨
-      return new UserMemberDTO(
-          null,              // orgId (Guest 사용자)
-          userId,            // userId
-          email,             // email
-          name,              // name (OAuth에서 가져온 이름)
-          null,              // password
-          null,              // birthdate
-          null,              // gender
-          null,              // address
-          null,              // phoneNumber
-          picture,           // picture (프로필 사진)
-          null,              // registeredByUserId
-          null,              // appTypeId
-          List.of()          // roleIds (빈 리스트)
-      );
+      return dslContext.insertInto(USERS)
+          .columns(USERS.EMAIL, USERS.PASSWORD, USERS.IS_DELETED,
+                   USERS.CREATED_AT, USERS.MODIFIED_AT)
+          .values(email, null, false, now, now)
+          .onConflict(USERS.EMAIL)  // PostgreSQL UNIQUE 제약 조건
+          .doUpdate()
+          .set(USERS.MODIFIED_AT, now)  // 로그인 시각 갱신
+          .returning()
+          .fetchOneInto(Users.class);
   }
 
   /**
-   * 조직의 기본 역할 ID 조회 (3단계 Fallback)
+   * 사용자의 특정 조직 Full 정보 조회 (APPROVED 멤버십 필수)
    *
-   * 우선순위:
-   * 1. "member" 이름의 역할 조회
-   * 2. level=1인 역할 조회 (가장 낮은 권한)
-   * 3. 모두 실패 시 명확한 예외 발생
+   * OAuth 로그인 시 X-Org-Id 헤더로 지정된 조직의 멤버십 조회
+   * APPROVED 멤버십이 있으면 orgId, roleIds 포함된 Full DTO 반환
    *
+   * @param userId 사용자 ID
    * @param orgId 조직 ID
-   * @return 기본 역할 ID
-   * @throws IllegalStateException 기본 역할을 찾을 수 없는 경우
+   * @return Full UserMemberDTO (orgId, roleIds 포함), 없으면 Empty
    */
-  private Long getDefaultRoleId(Long orgId) {
-      // 1단계: "member" 이름으로 검색 (기존 로직)
-      Long roleId = dslContext.select(ROLES.ID)
-          .from(ROLES)
-          .where(ROLES.ORG_ID.eq(orgId))
-          .and(ROLES.NAME.eq("member"))
-          .fetchOne(ROLES.ID);
+  public Optional<UserMemberDTO> fetchUserWithMembershipByOrgId(Long userId, Long orgId) {
+      return dslContext
+          .select(
+              USERS.ID,
+              USERS.EMAIL,
+              USERS.PASSWORD,
+              MEMBERSHIPS.ORG_ID,
+              MEMBERSHIPS.NAME,
+              MEMBERSHIPS.BIRTHDATE,
+              MEMBERSHIPS.GENDER,
+              MEMBERSHIPS.ADDRESS,
+              MEMBERSHIPS.PHONE_NUMBER,
+              MEMBERSHIPS.PICTURE,
+              MEMBERSHIPS.REGISTERED_BY_USER_ID,
+              ORGANIZATIONS.APP_TYPE_ID,
+              DSL.multiset(
+                  DSL.select(MEMBERSHIP_ROLES.ROLE_ID)
+                      .from(MEMBERSHIP_ROLES)
+                      .where(MEMBERSHIP_ROLES.MEMBERSHIP_ID.eq(MEMBERSHIPS.ID))
+              ).convertFrom(r -> r.into(Long.class)).as("roleIds")
+          )
+          .from(USERS)
+          .join(MEMBERSHIPS).on(MEMBERSHIPS.USER_ID.eq(USERS.ID))
+          .join(ORGANIZATIONS).on(ORGANIZATIONS.ORG_ID.eq(MEMBERSHIPS.ORG_ID))
+          .where(USERS.ID.eq(userId))
+          .and(MEMBERSHIPS.ORG_ID.eq(orgId))
+          .and(MEMBERSHIPS.STATUS.eq(MembershipStatus.APPROVED))
+          .and(USERS.IS_DELETED.eq(false))
+          .fetchOptionalInto(UserMemberDTO.class);
+  }
 
-      if (roleId != null) {
-          return roleId;
-      }
-
-      // 2단계: Fallback - level=1인 역할 검색
-      return rolesRepository.fetchByOrgIdAndLevel(orgId, 1)
-          .map(role -> role.getId())
-          .orElseThrow(() -> new IllegalStateException(
-              String.format(
-                  "No default role found for organization %d. " +
-                  "Please create a 'member' role or a role with level=1.",
-                  orgId
-              )
-          ));
+  /**
+   * 로그인용 사용자 정보 조회 (멤버십 여부 관계없이)
+   *
+   * 한 번의 쿼리로 Users + Organizations + Memberships(optional) 조회:
+   * - 멤버십 있으면: orgId, appTypeId, roleIds 포함 (회원)
+   * - 멤버십 없으면: orgId, appTypeId 포함, roleIds=[] (비회원, 가입 요청 가능)
+   *
+   * @param userId 사용자 ID
+   * @param orgId 조직 ID
+   * @return UserMemberDTO (멤버십 없어도 반환)
+   */
+  public UserMemberDTO fetchUserForLogin(Long userId, Long orgId) {
+      return dslContext.select(
+              ORGANIZATIONS.ORG_ID,
+              USERS.ID.as("userId"),
+              USERS.EMAIL,
+              DSL.coalesce(MEMBERSHIPS.NAME, USERS.EMAIL).as("name"),  // 멤버십 없으면 email 사용
+              USERS.PASSWORD,
+              MEMBERSHIPS.BIRTHDATE,
+              MEMBERSHIPS.GENDER,
+              MEMBERSHIPS.ADDRESS,
+              MEMBERSHIPS.PHONE_NUMBER,
+              MEMBERSHIPS.PICTURE,
+              MEMBERSHIPS.REGISTERED_BY_USER_ID,
+              ORGANIZATIONS.APP_TYPE_ID,
+              DSL.multiset(
+                  DSL.select(MEMBERSHIP_ROLES.ROLE_ID)
+                      .from(MEMBERSHIP_ROLES)
+                      .where(MEMBERSHIP_ROLES.MEMBERSHIP_ID.eq(MEMBERSHIPS.ID))
+                      .and(MEMBERSHIP_ROLES.ORG_ID.eq(MEMBERSHIPS.ORG_ID))
+              ).convertFrom(r -> r.into(Long.class)).as("roleIds")
+          )
+          .from(USERS)
+          .innerJoin(ORGANIZATIONS).on(ORGANIZATIONS.ORG_ID.eq(orgId))  // orgId 사전 필터링 (CROSS JOIN 제거)
+          .leftJoin(MEMBERSHIPS)     // 멤버십은 optional
+              .on(MEMBERSHIPS.USER_ID.eq(USERS.ID))
+              .and(MEMBERSHIPS.ORG_ID.eq(ORGANIZATIONS.ORG_ID))
+              .and(MEMBERSHIPS.STATUS.eq(MembershipStatus.APPROVED))
+          .where(USERS.ID.eq(userId))
+          .and(USERS.IS_DELETED.eq(false))
+          .fetchOneInto(UserMemberDTO.class);
   }
 
 }

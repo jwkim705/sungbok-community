@@ -1,11 +1,10 @@
 services:
   valkey:
     container_name: valkey
-    image: bitnami/valkey:latest
-    environment:
-      - VALKEY_PASSWORD=${VALKEY_PASSWORD}
+    image: valkey/valkey:latest
+    command: valkey-server --requirepass ${VALKEY_PASSWORD} --appendonly yes --appendfsync everysec
     volumes:
-      - valkey_data:/valkey
+      - valkey_data:/data
     ports:
       - "6379:6379"
     networks:

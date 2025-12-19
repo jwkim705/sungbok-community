@@ -2,6 +2,7 @@ package com.sungbok.community.repository;
 
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.generated.enums.OrganizationStatus;
 import org.jooq.generated.tables.daos.OrganizationsDao;
 import org.jooq.generated.tables.pojos.Organizations;
 import org.springframework.stereotype.Repository;
@@ -46,7 +47,7 @@ public class AppsRepository {
     public Optional<Organizations> fetchByAppKey(String appKey) {
         return dsl.selectFrom(ORGANIZATIONS)
                 .where(ORGANIZATIONS.ORG_KEY.eq(appKey))
-                .and(ORGANIZATIONS.STATUS.eq("ACTIVE"))
+                .and(ORGANIZATIONS.STATUS.eq(OrganizationStatus.ACTIVE))
                 .fetchOptionalInto(Organizations.class);
     }
 

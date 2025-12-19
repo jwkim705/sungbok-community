@@ -14,7 +14,7 @@ public class SecurityUtils {
 
   /** 유틸리티 클래스는 인스턴스화 불가 */
   private SecurityUtils() {
-    throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    throw new UnsupportedOperationException("유틸리티 클래스는 인스턴스화할 수 없습니다");
   }
 
   /**
@@ -26,17 +26,17 @@ public class SecurityUtils {
    */
   public static @NonNull PrincipalDetails getPrincipalDetails(Authentication authentication) {
     if (authentication == null) {
-      throw new IllegalArgumentException("Authentication must not be null");
+      throw new IllegalArgumentException("인증 객체는 필수입니다");
     }
 
     Object principal = authentication.getPrincipal();
     if (principal == null) {
-      throw new IllegalArgumentException("Authentication principal must not be null");
+      throw new IllegalArgumentException("인증 주체는 필수입니다");
     }
 
     if (!(principal instanceof PrincipalDetails)) {
       throw new IllegalArgumentException(
-          "Authentication principal must be an instance of PrincipalDetails, but was: "
+          "인증 주체는 PrincipalDetails 인스턴스여야 하지만, 실제 타입은: "
               + principal.getClass().getName()
       );
     }

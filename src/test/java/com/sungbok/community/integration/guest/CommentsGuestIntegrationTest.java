@@ -27,20 +27,25 @@ class CommentsGuestIntegrationTest extends BaseIntegrationTest {
                         .header("X-Org-Id", orgId))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("댓글 목록 조회 성공"))
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test
-    @DisplayName("GET /posts/{postId}/comments - X-Org-Id 헤더 없음 - 400 에러")
-    void testGetCommentsByPostId_NoHeader_ShouldReturn400() throws Exception {
+    @DisplayName("GET /posts/{postId}/comments - X-Org-Id 헤더 없음 - 404 에러")
+    void testGetCommentsByPostId_NoHeader_ShouldReturn404() throws Exception {
         // Given
         Long postId = 1L;
 
         // When & Then
         mockMvc.perform(get("/posts/" + postId + "/comments"))
                 .andDo(print())
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.title").value("NOT_FOUND"))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.type").exists())
+                .andExpect(jsonPath("$.code").value("TEN_001"))
+                .andExpect(jsonPath("$.traceId").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }

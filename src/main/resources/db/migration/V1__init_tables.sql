@@ -6,6 +6,34 @@ CREATE SCHEMA public;
 GRANT ALL ON SCHEMA public TO public;
 
 -- ============================================
+-- PostgreSQL Enum 타입 정의
+-- ============================================
+
+-- 멤버십 상태 Enum
+CREATE TYPE membership_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+COMMENT ON TYPE membership_status IS '멤버십 상태: PENDING(대기), APPROVED(승인), REJECTED(거절)';
+
+-- 조직 상태 Enum
+CREATE TYPE organization_status AS ENUM ('ACTIVE', 'SUSPENDED', 'DELETED');
+COMMENT ON TYPE organization_status IS '조직 상태: ACTIVE(활성), SUSPENDED(정지), DELETED(삭제)';
+
+-- 푸시 알림 상태 Enum
+CREATE TYPE push_status AS ENUM ('OK', 'ERROR', 'INVALID_TOKEN');
+COMMENT ON TYPE push_status IS '푸시 알림 전송 상태';
+
+-- 플랫폼 타입 Enum (앱 버전 관리)
+CREATE TYPE platform_type AS ENUM ('ios', 'android');
+COMMENT ON TYPE platform_type IS '플랫폼 타입: ios(iOS), android(Android)';
+
+-- 설정 값 타입 Enum (동적 앱 설정)
+CREATE TYPE config_type AS ENUM ('string', 'integer', 'float', 'double', 'boolean', 'json', 'array', 'date');
+COMMENT ON TYPE config_type IS '설정 값 타입: string(문자열), integer(정수), float(부동소수점), double(배정밀도), boolean(불린), json(JSON 객체), array(배열), date(날짜)';
+
+-- 약관 타입 Enum
+CREATE TYPE term_type AS ENUM ('TOS', 'PRIVACY', 'MARKETING');
+COMMENT ON TYPE term_type IS '약관 타입: TOS(이용약관), PRIVACY(개인정보처리방침), MARKETING(마케팅동의)';
+
+-- ============================================
 -- CREATE TABLES
 -- ============================================
 
@@ -30,14 +58,13 @@ CREATE TABLE organizations (
     org_name VARCHAR(255) NOT NULL,
     org_key VARCHAR(100) UNIQUE NOT NULL,
     is_public BOOLEAN DEFAULT TRUE,
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    status organization_status NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
     modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     modified_by BIGINT,
     CONSTRAINT fk_organizations_app_type FOREIGN KEY (app_type_id) REFERENCES app_types(app_type_id),
-    CONSTRAINT chk_org_id_positive CHECK (org_id > 0),
-    CONSTRAINT chk_status_valid CHECK (status IN ('ACTIVE', 'SUSPENDED', 'DELETED'))
+    CONSTRAINT chk_org_id_positive CHECK (org_id > 0)
 );
 
 COMMENT ON TABLE organizations IS '조직 (Church A, Cafe B, Company C 등)';
@@ -153,7 +180,7 @@ CREATE TABLE memberships (
     phone_number VARCHAR(20),
     picture TEXT,
     nickname VARCHAR(50),
-    status VARCHAR(20) DEFAULT 'PENDING',
+    status membership_status DEFAULT 'PENDING',
     requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     approved_at TIMESTAMP,
     approved_by BIGINT,
@@ -386,6 +413,11 @@ CREATE TABLE files (
     file_size BIGINT NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
     uploader_id BIGINT NOT NULL,
+    status VARCHAR(20) DEFAULT 'PENDING' NOT NULL,
+    uploaded_at TIMESTAMP,
+    duration DOUBLE PRECISION,
+    resolution VARCHAR(20),
+    codec VARCHAR(50),
     is_deleted BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by BIGINT,
@@ -394,10 +426,20 @@ CREATE TABLE files (
     CONSTRAINT fk_files_org FOREIGN KEY (org_id) REFERENCES organizations(org_id),
     CONSTRAINT fk_files_uploader FOREIGN KEY (uploader_id) REFERENCES users(id),
     CONSTRAINT files_org_id_unique UNIQUE (org_id, file_id),
-    CONSTRAINT files_org_stored_filename_unique UNIQUE (org_id, stored_filename)
+    CONSTRAINT files_org_stored_filename_unique UNIQUE (org_id, stored_filename),
+    CONSTRAINT files_status_check CHECK (status IN ('PENDING', 'ACTIVE', 'VERIFIED', 'REJECTED'))
 );
 
 COMMENT ON TABLE files IS '파일';
+COMMENT ON COLUMN files.status IS '파일 상태: PENDING(업로드 대기), ACTIVE(업로드 완료), VERIFIED(검증 완료), REJECTED(검증 실패)';
+COMMENT ON COLUMN files.uploaded_at IS '파일 업로드 완료 시각';
+COMMENT ON COLUMN files.duration IS '동영상 재생 시간 (초)';
+COMMENT ON COLUMN files.resolution IS '동영상 해상도 (예: 1920x1080)';
+COMMENT ON COLUMN files.codec IS '동영상 코덱 (예: h264)';
+
+-- 파일 상태 및 업로드 시각 인덱스
+CREATE INDEX idx_files_status ON files(status);
+CREATE INDEX idx_files_uploaded_at ON files(uploaded_at);
 
 -- ============================================
 -- INSERT INITIAL DATA
@@ -493,7 +535,6 @@ CREATE INDEX idx_oauth_accounts_org_deleted ON oauth_accounts(org_id, is_deleted
 -- memberships 테이블
 CREATE INDEX idx_memberships_user_id ON memberships(user_id);
 CREATE INDEX idx_memberships_org_id ON memberships(org_id);
-CREATE INDEX idx_memberships_role_id ON memberships(role_id);
 CREATE INDEX idx_memberships_org_name ON memberships(org_id, name);
 CREATE INDEX idx_memberships_org_nickname ON memberships(org_id, nickname);
 CREATE INDEX idx_memberships_org_user ON memberships(org_id, user_id);
@@ -544,4 +585,274 @@ CREATE INDEX idx_comments_org_deleted ON comments(org_id, is_deleted);
 -- files 테이블
 CREATE INDEX idx_files_org_entity ON files(org_id, related_entity_id, related_entity_type);
 CREATE INDEX idx_files_org_uploader ON files(org_id, uploader_id);
-CREATE INDEX idx_files_org_deleted ON files(org_id, is_deleted);
+
+-- ============================================
+-- PUSH NOTIFICATIONS TABLES
+-- ============================================
+
+-- notifications 테이블 (알림 이력)
+CREATE TABLE notifications (
+    notification_id BIGSERIAL PRIMARY KEY,
+    org_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    notification_type VARCHAR(50) NOT NULL,  -- POST_COMMENT, POST_LIKE, MEMBERSHIP_APPROVED, MEMBERSHIP_REJECTED, ADMIN_ANNOUNCEMENT
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+
+    -- 관련 엔티티
+    related_entity_type VARCHAR(50),  -- post, comment, membership, announcement
+    related_entity_id BIGINT,
+
+    -- 읽음 상태 (알림 히스토리용)
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at TIMESTAMP,
+
+    -- 푸시 전송 상태
+    push_sent BOOLEAN DEFAULT FALSE,
+    push_sent_at TIMESTAMP,
+    push_status push_status,
+    push_error_message TEXT,
+
+    -- 메타데이터
+    metadata JSONB,
+
+    -- 감사 필드
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by BIGINT,
+
+    CONSTRAINT fk_notifications_org FOREIGN KEY (org_id) REFERENCES organizations(org_id),
+    CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT chk_notification_type_valid CHECK (notification_type IN (
+        'MEMBERSHIP_APPROVED', 'MEMBERSHIP_REJECTED',
+        'POST_COMMENT', 'POST_LIKE', 'ADMIN_ANNOUNCEMENT'
+    )),
+    CONSTRAINT chk_push_status_valid CHECK (push_status IN ('OK', 'ERROR', 'INVALID_TOKEN'))
+);
+
+CREATE INDEX idx_notifications_org_user ON notifications(org_id, user_id);
+CREATE INDEX idx_notifications_org_user_read ON notifications(org_id, user_id, is_read);
+CREATE INDEX idx_notifications_org_created ON notifications(org_id, created_at DESC);
+
+COMMENT ON COLUMN notifications.is_read IS '사용자가 읽었는지 여부 (앱 알림함용)';
+COMMENT ON COLUMN notifications.read_at IS '읽은 시각';
+COMMENT ON TABLE notifications IS '알림 이력 - 이벤트 발생 시점에 즉시 INSERT (푸시 발송 여부와 무관)';
+
+-- push_tokens 테이블 (Expo Push Token)
+CREATE TABLE push_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    org_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    expo_push_token VARCHAR(255) NOT NULL,
+
+    -- 디바이스 정보
+    device_type VARCHAR(50),  -- ios, android
+    device_name VARCHAR(255),
+    app_version VARCHAR(50),
+
+    -- 토큰 상태
+    is_active BOOLEAN DEFAULT TRUE,
+    last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- 감사 필드
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by BIGINT,
+
+    CONSTRAINT fk_push_tokens_org FOREIGN KEY (org_id) REFERENCES organizations(org_id),
+    CONSTRAINT fk_push_tokens_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT push_tokens_org_user_token_unique UNIQUE (org_id, user_id, expo_push_token)
+);
+
+CREATE INDEX idx_push_tokens_org_user ON push_tokens(org_id, user_id);
+CREATE INDEX idx_push_tokens_org_active ON push_tokens(org_id, is_active);
+
+COMMENT ON TABLE push_tokens IS 'Expo Push Token 저장 (조직별 스코프, 한 유저가 여러 디바이스 가능)';
+
+-- notification_settings 테이블 (사용자별 알림 설정)
+CREATE TABLE notification_settings (
+    id BIGSERIAL PRIMARY KEY,
+    org_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+
+    -- 알림 타입별 활성화 (JSONB, 확장 가능)
+    notification_preferences JSONB DEFAULT '{"post_comment": true, "post_like": true, "membership_approved": true, "membership_rejected": true, "admin_announcement": true}'::jsonb,
+
+    -- 푸시 마스터 스위치
+    enable_push_notifications BOOLEAN DEFAULT TRUE,
+
+    -- 감사 필드
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by BIGINT,
+
+    CONSTRAINT fk_notification_settings_org FOREIGN KEY (org_id) REFERENCES organizations(org_id),
+    CONSTRAINT fk_notification_settings_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT notification_settings_org_user_unique UNIQUE (org_id, user_id)
+);
+
+CREATE INDEX idx_notification_settings_org_user ON notification_settings(org_id, user_id);
+
+COMMENT ON COLUMN notification_settings.notification_preferences IS 'JSONB 기반 알림 타입별 설정. 예: {"post_comment": true, "post_like": false}';
+COMMENT ON TABLE notification_settings IS '사용자별 알림 설정 - Valkey에 캐싱됨';
+
+-- ============================================
+-- APP MANAGEMENT TABLES (앱 관리 테이블)
+-- ============================================
+
+-- app_versions 테이블 (조직별 앱 버전 관리)
+CREATE TABLE app_versions (
+    id BIGSERIAL PRIMARY KEY,
+    org_id BIGINT NOT NULL,
+    platform platform_type NOT NULL,
+
+    -- 버전 정보
+    min_version VARCHAR(20) NOT NULL,
+    latest_version VARCHAR(20) NOT NULL,
+    force_update_message TEXT DEFAULT '새 버전으로 업데이트가 필요합니다.',
+    update_url VARCHAR(500),
+
+    -- 점검 모드
+    is_maintenance BOOLEAN DEFAULT FALSE,
+    maintenance_message TEXT,
+
+    -- 공통 감사 필드
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by BIGINT,
+
+    CONSTRAINT fk_app_versions_org FOREIGN KEY (org_id) REFERENCES organizations(org_id),
+    CONSTRAINT app_versions_org_platform_unique UNIQUE (org_id, platform)
+);
+
+CREATE INDEX idx_app_versions_org_platform ON app_versions(org_id, platform);
+
+COMMENT ON TABLE app_versions IS '조직별 앱 버전 관리 (강제 업데이트, 점검 모드)';
+COMMENT ON COLUMN app_versions.min_version IS '최소 지원 버전 (이보다 낮으면 강제 업데이트)';
+COMMENT ON COLUMN app_versions.latest_version IS '최신 버전 (권장 업데이트 표시)';
+COMMENT ON COLUMN app_versions.is_maintenance IS '점검 모드 활성화 여부';
+
+-- app_configs 테이블 (조직별 동적 설정)
+CREATE TABLE app_configs (
+    id BIGSERIAL PRIMARY KEY,
+    org_id BIGINT NOT NULL,
+    config_key VARCHAR(100) NOT NULL,
+    config_value TEXT NOT NULL,
+    config_type config_type DEFAULT 'string',
+    description TEXT,
+
+    -- 공통 감사 필드
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by BIGINT,
+
+    CONSTRAINT fk_app_configs_org FOREIGN KEY (org_id) REFERENCES organizations(org_id),
+    CONSTRAINT app_configs_org_key_unique UNIQUE (org_id, config_key)
+);
+
+CREATE INDEX idx_app_configs_org_key ON app_configs(org_id, config_key);
+
+COMMENT ON TABLE app_configs IS '조직별 동적 앱 설정 (UI 테마, 환영 메시지, 공지 등)';
+COMMENT ON COLUMN app_configs.config_key IS '설정 키 (예: theme_primary_color, logo_url, welcome_message)';
+COMMENT ON COLUMN app_configs.config_value IS '설정 값 (TEXT 타입, 모든 타입 저장 가능)';
+COMMENT ON COLUMN app_configs.config_type IS '설정 값의 데이터 타입';
+
+-- terms 테이블 (약관 버전 관리)
+CREATE TABLE terms (
+    id BIGSERIAL PRIMARY KEY,
+    org_id BIGINT,  -- NULL이면 플랫폼 전체 약관
+    term_type term_type NOT NULL,
+    version VARCHAR(20) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    is_required BOOLEAN DEFAULT TRUE,
+    is_current BOOLEAN DEFAULT FALSE,
+    effective_date DATE NOT NULL,
+
+    -- 공통 감사 필드
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT,
+    modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    modified_by BIGINT,
+
+    CONSTRAINT fk_terms_org FOREIGN KEY (org_id) REFERENCES organizations(org_id),
+    CONSTRAINT terms_org_type_version_unique UNIQUE (org_id, term_type, version)
+);
+
+-- is_current=TRUE인 약관은 한 조직의 한 타입당 하나만 존재
+CREATE UNIQUE INDEX idx_terms_org_type_current_unique
+    ON terms(org_id, term_type)
+    WHERE is_current = TRUE;
+
+CREATE INDEX idx_terms_org_type ON terms(org_id, term_type);
+CREATE INDEX idx_terms_org_current ON terms(org_id, is_current);
+
+COMMENT ON TABLE terms IS '약관 버전 관리 (org_id NULL이면 플랫폼 전체 약관)';
+COMMENT ON COLUMN terms.org_id IS '조직 ID (NULL이면 플랫폼 공통 약관)';
+COMMENT ON COLUMN terms.is_current IS '현재 유효한 버전 (한 타입당 하나만 TRUE)';
+COMMENT ON COLUMN terms.effective_date IS '약관 시행일';
+
+-- user_term_agreements 테이블 (사용자 동의 이력)
+CREATE TABLE user_term_agreements (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    term_id BIGINT NOT NULL,
+    agreed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    ip_address INET,  -- 법적 증거
+
+    CONSTRAINT fk_user_term_agreements_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_user_term_agreements_term FOREIGN KEY (term_id) REFERENCES terms(id),
+    CONSTRAINT user_term_agreements_user_term_unique UNIQUE (user_id, term_id)
+);
+
+CREATE INDEX idx_user_term_agreements_user ON user_term_agreements(user_id);
+CREATE INDEX idx_user_term_agreements_term ON user_term_agreements(term_id);
+
+COMMENT ON TABLE user_term_agreements IS '사용자 약관 동의 이력 (법적 증거, 변경 불가)';
+COMMENT ON COLUMN user_term_agreements.ip_address IS '동의 시점의 IP 주소 (법적 증거)';
+
+-- audit_logs 테이블 (감사 로그)
+CREATE TABLE audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    org_id BIGINT,  -- NULL이면 플랫폼 레벨 작업
+    user_id BIGINT,
+    action VARCHAR(100) NOT NULL,
+    resource_type VARCHAR(50),
+    resource_id BIGINT,
+    old_value JSONB,
+    new_value JSONB,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+
+    CONSTRAINT fk_audit_logs_org FOREIGN KEY (org_id) REFERENCES organizations(org_id),
+    CONSTRAINT fk_audit_logs_user FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_audit_logs_org_action ON audit_logs(org_id, action);
+CREATE INDEX idx_audit_logs_org_created ON audit_logs(org_id, created_at DESC);
+CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
+
+COMMENT ON TABLE audit_logs IS '감사 로그 (보안 추적, 변경 이력)';
+COMMENT ON COLUMN audit_logs.action IS '작업 타입 (USER_LOGIN, POST_DELETE, ROLE_CHANGE 등)';
+COMMENT ON COLUMN audit_logs.old_value IS '변경 전 값 (JSONB)';
+COMMENT ON COLUMN audit_logs.new_value IS '변경 후 값 (JSONB)';
+
+-- ============================================
+-- INSERT INITIAL DATA (초기 데이터 추가)
+-- ============================================
+
+-- posts_categories 초기 데이터 (공지사항, FAQ, QNA, 자유게시판)
+INSERT INTO posts_categories (name, description) VALUES
+('공지사항', '조직의 공지사항 게시판'),
+('FAQ', '자주 묻는 질문'),
+('QNA', '질문과 답변'),
+('자유게시판', '자유로운 소통 공간');

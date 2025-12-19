@@ -1,16 +1,16 @@
 package com.sungbok.community.controller;
 
-import com.sungbok.community.common.dto.OkResponseDTO;
-import com.sungbok.community.common.exception.DataNotFoundException;
+import com.sungbok.community.common.exception.ResourceNotFoundException;
+import com.sungbok.community.common.exception.code.TenantErrorCode;
 import com.sungbok.community.repository.OrganizationsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.generated.tables.pojos.Organizations;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Organizations API 컨트롤러
@@ -33,11 +33,9 @@ public class OrganizationsController {
      * @return 공개 조직 리스트
      */
     @GetMapping
-    public ResponseEntity<OkResponseDTO> getAllPublicOrganizations() {
+    public ResponseEntity<List<Organizations>> getAllPublicOrganizations() {
         List<Organizations> orgs = organizationsRepository.fetchAllPublic();
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "공개 조직 목록 조회 성공", orgs)
-        );
+        return ResponseEntity.ok(orgs);
     }
 
     /**
@@ -48,16 +46,14 @@ public class OrganizationsController {
      * @return 조직 상세 정보
      */
     @GetMapping("/{orgId}")
-    public ResponseEntity<OkResponseDTO> getOrganizationById(
+    public ResponseEntity<Organizations> getOrganizationById(
             @PathVariable Long orgId) {
         Organizations org = organizationsRepository.fetchById(orgId)
                 .filter(Organizations::getIsPublic)
-                .orElseThrow(() -> new DataNotFoundException(
-                    HttpStatus.NOT_FOUND,
-                    "조직을 찾을 수 없거나 공개되지 않은 조직입니다: " + orgId
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    TenantErrorCode.NOT_FOUND,
+                    Map.of("orgId", orgId)
                 ));
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "조직 조회 성공", org)
-        );
+        return ResponseEntity.ok(org);
     }
 }

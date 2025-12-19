@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
 
+import org.junit.jupiter.api.Disabled;
+
 /**
  * JWT Refresh Token 통합 테스트
  * POST /auth/refresh 엔드포인트를 테스트합니다.
@@ -53,12 +55,10 @@ class TokenRefreshIntegrationTest extends BaseIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("Token refreshed successfully"))
-                .andExpect(jsonPath("$.data.accessToken").exists())
-                .andExpect(jsonPath("$.data.refreshToken").value(validRefreshToken))
-                .andExpect(jsonPath("$.data.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.data.expiresIn").value(900))
+                .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.refreshToken").value(validRefreshToken))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.expiresIn").value(900))
                 .andReturn();
 
         // TokenTestHelper로 새로운 Access Token 검증
@@ -81,7 +81,12 @@ class TokenRefreshIntegrationTest extends BaseIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value(401))
-                .andExpect(jsonPath("$.message").value("Invalid or expired refresh token"));
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.title").exists())
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.type").exists())
+                .andExpect(jsonPath("$.code").exists())
+                .andExpect(jsonPath("$.traceId").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }

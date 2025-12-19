@@ -1,10 +1,13 @@
 package com.sungbok.community.security.jwt;
 
-import com.sungbok.community.common.exception.BadRequestException;
+import com.sungbok.community.common.exception.ValidationException;
+import com.sungbok.community.common.exception.code.AuthErrorCode;
+import com.sungbok.community.common.exception.code.TenantErrorCode;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.security.TenantContext;
 import com.sungbok.community.security.model.PrincipalDetails;
+import com.sungbok.community.security.util.FilterErrorResponseUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +43,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProperties jwtProperties;
     private final TenantResolver tenantResolver;
 
+    /**
+     * Form Login 경로는 필터링하지 않음
+     * UsernamePasswordAuthenticationFilter가 처리하도록 제외
+     */
+    @Override
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // Form Login 엔드포인트 제외
+        return path.equals("/login");
+    }
+
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
@@ -66,8 +80,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     if (!isPlatformApi) {
                         log.error("Guest JWT는 플랫폼 레벨 API만 접근 가능: {}", requestURI);
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                            "Guest user. Please join an organization first.");
+                        FilterErrorResponseUtil.writeErrorResponse(
+                                response,
+                                AuthErrorCode.ACCESS_DENIED,
+                                requestURI
+                        );
                         return;  // 필터 체인 중단
                     }
 
@@ -129,7 +146,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 실제 배포에서는 "/api/organizations"로 들어올 수 있음
                 boolean isPlatformLevelApi = requestURI.endsWith("/organizations")
                                           || requestURI.endsWith("/app-types")
-                                          || requestURI.contains("/auth/login/");  // OAuth 로그인 엔드포인트
+                                          || requestURI.contains("/auth/");  // 모든 /auth/** 경로는 플랫폼 레벨
 
                 if (isPlatformLevelApi) {
                     // 플랫폼 레벨 API: X-Org-Id 선택적 (있으면 사용, 없어도 허용)
@@ -137,7 +154,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         Long orgId = tenantResolver.resolveOrgId(request);
                         TenantContext.setOrgId(orgId);
                         log.debug("플랫폼 레벨 API 접근 (X-Org-Id 제공됨): orgId={}", requestURI);
-                    } catch (BadRequestException e) {
+                    } catch (ValidationException e) {
                         // X-Org-Id 없어도 허용
                         log.debug("플랫폼 레벨 API 접근 (X-Org-Id 없음): {}", requestURI);
                     }
@@ -147,9 +164,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         Long orgId = tenantResolver.resolveOrgId(request);
                         TenantContext.setOrgId(orgId);
                         log.debug("Guest 모드: orgId={}", orgId);
-                    } catch (BadRequestException e) {
+                    } catch (ValidationException e) {
                         log.error("Guest 모드 검증 실패: {}", e.getMessage());
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+                        FilterErrorResponseUtil.writeErrorResponse(
+                                response,
+                                TenantErrorCode.NOT_FOUND,
+                                request.getRequestURI()
+                        );
                         return;  // 필터 체인 중단
                     }
                 }

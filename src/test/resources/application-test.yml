@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/sungbok
+    url: jdbc:postgresql://localhost:5432/community
     username: admin # DB 사용자명
     password: 1234 # DB 비밀번호
     driver-class-name: org.postgresql.Driver
@@ -74,7 +74,33 @@ app:
     issuer: sungbok-community
     token-prefix: "Bearer "
     header-name: "Authorization"
-server:
-  servlet:
-    session:
-      timeout: 60m
+oci:
+  storage:
+    namespace: test-namespace
+    bucket-name: test-bucket
+    region: ap-seoul-1
+    # S3 호환 엔드포인트
+    endpoint: https://test-namespace.compat.objectstorage.ap-seoul-1.oraclecloud.com
+    # 인증 (Customer Secret Keys)
+    auth:
+      access-key: test-access-key
+      secret-key: test-secret-key
+    cdn:
+      enabled: false
+      provider: cloudflare
+      domain: test-cdn.example.com
+    presigned-url-expiration: 600
+    max-file-size:
+      default-size: 10485760  # 10MB (kebab-case로 변경)
+      video: 104857600   # 100MB
+    allowed-mime-types:
+      - image/jpeg
+      - image/png
+      - image/webp
+      - application/pdf
+      - video/mp4
+
+# FFmpeg 설정 (동영상 검증용)
+ffmpeg:
+  path: /usr/bin/ffmpeg
+  probe-path: /usr/bin/ffprobe

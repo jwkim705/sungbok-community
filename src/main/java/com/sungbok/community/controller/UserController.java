@@ -2,9 +2,9 @@ package com.sungbok.community.controller;
 
 
 import com.sungbok.community.common.constant.UriConstant;
-import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UserMemberDTO;
+import com.sungbok.community.security.TenantContext;
 import com.sungbok.community.service.change.ChangeUserService;
 import com.sungbok.community.service.get.GetUserService;
 import jakarta.validation.Valid;
@@ -33,8 +33,16 @@ public class UserController {
 //    }
 
     @PostMapping("/signup")
-    public ResponseEntity<@NonNull UserMemberDTO> signup(@RequestBody @Valid AddUserRequestDTO request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(changeUserService.signup(request));
+    public ResponseEntity<@NonNull UserMemberDTO> signup(
+            @RequestBody @Valid AddUserRequestDTO request,
+            @RequestHeader("X-Org-Id") Long orgId) {
+        try {
+            TenantContext.setOrgId(orgId);
+            UserMemberDTO user = changeUserService.signup(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        } finally {
+            TenantContext.clear();
+        }
     }
 
 //    @PatchMapping("/{userId}")
@@ -50,9 +58,9 @@ public class UserController {
 //    }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<@NonNull OkResponseDTO> deleteUser(@PathVariable("userId") Long userId) {
+    public ResponseEntity<Void> deleteUser(@PathVariable("userId") Long userId) {
         changeUserService.deleteUser(userId);
-        return ResponseEntity.ok(OkResponseDTO.deleted("User", 1));
+        return ResponseEntity.noContent().build();
     }
 
 }

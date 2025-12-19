@@ -2,11 +2,13 @@ package com.sungbok.community.integration.auth;
 
 import com.sungbok.community.common.constant.UriConstant;
 import com.sungbok.community.dto.UserMemberDTO;
+import com.sungbok.community.dto.auth.LogoutRequest;
 import com.sungbok.community.fixture.UserFixture;
 import com.sungbok.community.support.BaseIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -41,13 +43,18 @@ class LogoutIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("POST /auth/logout - 유효한 JWT - Refresh Token 삭제")
     void testLogout_WithValidAuthentication_ShouldDeleteRefreshToken() throws Exception {
+        // Logout request body 생성 (Refresh Token 포함)
+        String requestBody = objectMapper.writeValueAsString(
+            new LogoutRequest(validRefreshToken)
+        );
+
         // When & Then
         mockMvc.perform(post(UriConstant.AUTH + "/logout")
-                        .header("Authorization", "Bearer " + validAccessToken))
+                        .header("Authorization", "Bearer " + validAccessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
                 .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("Logged out successfully"));
+                .andExpect(status().isNoContent());
 
         // TokenTestHelper로 Redis에서 Refresh Token이 삭제되었는지 확인
         tokenTestHelper.assertRefreshTokenNotInRedis(testUser.getEmail());

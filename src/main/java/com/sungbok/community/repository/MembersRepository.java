@@ -1,5 +1,6 @@
 package com.sungbok.community.repository;
 
+import org.jooq.generated.enums.MembershipStatus;
 import com.sungbok.community.security.TenantContext;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
@@ -121,7 +122,7 @@ public class MembersRepository {
      * @param approvedBy 승인자 사용자 ID
      * @return 영향받은 행 수
      */
-    public int updateStatus(Long membershipId, String status, Long approvedBy) {
+    public int updateStatus(Long membershipId, MembershipStatus status, Long approvedBy) {
         return dsl.update(MEMBERSHIPS)
                 .set(MEMBERSHIPS.STATUS, status)
                 .set(MEMBERSHIPS.APPROVED_BY, approvedBy)
@@ -140,7 +141,7 @@ public class MembersRepository {
     public List<Memberships> fetchPendingMemberships() {
         return dsl.selectFrom(MEMBERSHIPS)
                 .where(orgIdCondition(MEMBERSHIPS.ORG_ID))
-                .and(MEMBERSHIPS.STATUS.eq("PENDING"))
+                .and(MEMBERSHIPS.STATUS.eq(MembershipStatus.PENDING))
                 .orderBy(MEMBERSHIPS.REQUESTED_AT.desc())
                 .fetchInto(Memberships.class);
     }

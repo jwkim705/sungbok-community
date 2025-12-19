@@ -1,7 +1,4 @@
 spring:
-  config:
-    activate:
-      on-profile: local
   application:
     name: sungbok
   datasource:
@@ -69,20 +66,65 @@ spring:
 app:
   cors:
     allowed-origins:
-      - http://localhost:3000 # React/Next.js 개발 서버
       - http://localhost:19006 # Expo 개발 서버
-  frontend:
-    default-url: http://localhost:3000  # 기본 프론트엔드 URL (fallback)
   jwt:
     # ES256 알고리즘용 EC 키 페어 경로
-    # 환경 변수로 오버라이드 가능 (JWT_PRIVATE_KEY_PATH, JWT_PUBLIC_KEY_PATH)
-    private-key: ${JWT_PRIVATE_KEY_PATH:classpath:keys/jwt-private.pem}
-    public-key: ${JWT_PUBLIC_KEY_PATH:classpath:keys/jwt-public.pem}
+    private-key: classpath:keys/jwt-private.pem
+    public-key: classpath:keys/jwt-public.pem
     access-token-expiration: 900000  # 15분 (밀리초)
     refresh-token-expiration: 604800000  # 7일 (밀리초)
     issuer: sungbok-community
     token-prefix: "Bearer "
     header-name: "Authorization"
+
+# OCI Object Storage 설정 (S3 호환 API)
+oci:
+  storage:
+    namespace: ${OCI_NAMESPACE}
+    bucket-name: ${OCI_BUCKET_NAME:dev-sungbok-files}
+    region: ${OCI_REGION:ap-seoul-1}
+    # S3 호환 엔드포인트
+    endpoint: https://${OCI_NAMESPACE}.compat.objectstorage.${OCI_REGION}.oraclecloud.com
+
+    # 인증 (Customer Secret Keys)
+    auth:
+      access-key: ${OCI_ACCESS_KEY}
+      secret-key: ${OCI_SECRET_KEY}
+
+    # Cloudflare CDN 설정
+    cdn:
+      enabled: ${CDN_ENABLED:true}
+      provider: cloudflare
+      domain: ${CDN_DOMAIN:files.sungbok.p-e.kr}
+      # Origin: OCI Object Storage 버킷 URL
+      # Cloudflare DNS: files.sungbok.p-e.kr → OCI Object Storage
+      # Cache 설정: 이미지/동영상 장기 캐싱 (7일~30일)
+
+    # Pre-signed URL 만료 시간 (업로드용)
+    presigned-url-expiration: 600  # 10분 (초 단위)
+
+    # 파일 크기 제한
+    max-file-size:
+      default-size: 10485760  # 10MB
+      video: 104857600   # 100MB
+
+    # 허용 MIME Types
+    allowed-mime-types:
+      - image/jpeg
+      - image/png
+      - image/webp
+      - application/pdf
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      - video/mp4
+      - video/quicktime
+      - application/zip
+      - text/plain
+
+# FFmpeg 설정 (동영상 검증용)
+ffmpeg:
+  path: ${FFMPEG_PATH:/usr/bin/ffmpeg}
+  probe-path: ${FFPROBE_PATH:/usr/bin/ffprobe}
 
 logging:
   config: classpath:log4j2.xml
@@ -90,5 +132,3 @@ logging:
 server:
   servlet:
     context-path: /api
-    session:
-      timeout: 60m

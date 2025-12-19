@@ -1,32 +1,34 @@
 package com.sungbok.community.common.exception;
 
 import java.io.Serial;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 
-public class SystemException extends RuntimeException {
+/**
+ * 시스템 에러 예외
+ * 파일 업로드 실패, 내부 서버 오류 등 시스템 관련 예외
+ *
+ * @since 1.1.0
+ */
+public class SystemException extends BaseException {
 
-  @Serial
-  private static final long serialVersionUID = -6916499826206129515L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
-  private HttpStatusCode code = HttpStatus.INTERNAL_SERVER_ERROR;
-  private final String message;
+    /**
+     * ErrorCode만으로 예외 생성
+     *
+     * @param errorCode 에러 코드
+     */
+    public SystemException(ErrorCode errorCode) {
+        super(errorCode);
+    }
 
-  public SystemException(String message) {
-    super(message);
-    this.message = message;
-  }
-
-  public SystemException(String message, Throwable throwable) {
-    super(message, throwable);
-    this.message = message;
-  }
-
-  public SystemException(HttpStatusCode code, String message) {
-    super(message);
-    this.code = code;
-    this.message = message;
-  }
-
-
+    /**
+     * ErrorCode와 원인 예외로 예외 생성
+     *
+     * @param errorCode 에러 코드
+     * @param cause 원인 예외
+     */
+    public SystemException(ErrorCode errorCode, Throwable cause) {
+        super(errorCode, errorCode.getMessage(), cause);
+    }
 }

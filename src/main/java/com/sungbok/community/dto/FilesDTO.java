@@ -34,7 +34,41 @@ public class FilesDTO extends CommonVO {
 
     private Long uploaderId;
 
-    private boolean isDeleted;
+    private Boolean isDeleted;
 
+    /**
+     * 파일 상태 (PENDING, ACTIVE, VERIFIED, REJECTED)
+     */
+    private String status;
+
+    /**
+     * 업로드 완료 시각
+     */
+    private LocalDateTime uploadedAt;
+
+    /**
+     * 동영상 재생 시간 (초)
+     */
+    private Double duration;
+
+    /**
+     * 동영상 해상도 (예: 1920x1080)
+     */
+    private String resolution;
+
+    /**
+     * 동영상 코덱 (예: h264)
+     */
+    private String codec;
+
+    /**
+     * Cloudflare CDN URL (읽기 전용, public 파일용)
+     */
+    private String cdnUrl;
+
+    /**
+     * Pre-signed Download URL (읽기 전용, private 파일용, 1시간 만료)
+     */
+    private String downloadUrl;
 
 }

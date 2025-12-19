@@ -1,7 +1,6 @@
 package com.sungbok.community.controller;
 
 import com.sungbok.community.common.constant.UriConstant;
-import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.dto.AddPostRequestDTO;
 import com.sungbok.community.dto.AddPostResponseDTO;
 import com.sungbok.community.dto.GetPostResponseDTO;
@@ -75,10 +74,10 @@ public class PostController {
     }
 
     @DeleteMapping("/{postId}")
-    public ResponseEntity<@NonNull OkResponseDTO> deletePost(@PathVariable("postId") Long postId,
+    public ResponseEntity<Void> deletePost(@PathVariable("postId") Long postId,
                                           Authentication authentication) {
         UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         changePostService.deletePost(postId, user.getUserId());
-        return ResponseEntity.ok(OkResponseDTO.deleted("Post", 1));
+        return ResponseEntity.noContent().build();
     }
 }

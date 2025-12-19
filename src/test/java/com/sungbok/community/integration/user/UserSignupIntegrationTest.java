@@ -39,8 +39,10 @@ class UserSignupIntegrationTest extends BaseIntegrationTest {
                 .build();
 
         // 실행: 회원가입 API 호출
+        Long orgId = testDataManager.getTestOrgId();
         MvcResult result = mockMvc.perform(
                         post(UriConstant.USERS + "/signup")
+                                .header("X-Org-Id", orgId)
                                 .content(objectMapper.writeValueAsString(requestDTO))
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())

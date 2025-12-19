@@ -61,7 +61,7 @@ class SecurityUtilsTest {
         () -> SecurityUtils.getPrincipalDetails(null)
     );
 
-    assertEquals("Authentication must not be null", exception.getMessage());
+    assertEquals("인증 객체는 필수입니다", exception.getMessage());
   }
 
   @Test
@@ -76,7 +76,7 @@ class SecurityUtilsTest {
         () -> SecurityUtils.getPrincipalDetails(authentication)
     );
 
-    assertEquals("Authentication principal must not be null", exception.getMessage());
+    assertEquals("인증 주체는 필수입니다", exception.getMessage());
   }
 
   @Test
@@ -93,7 +93,7 @@ class SecurityUtilsTest {
         () -> SecurityUtils.getPrincipalDetails(authentication)
     );
 
-    assertTrue(exception.getMessage().contains("must be an instance of PrincipalDetails"));
+    assertTrue(exception.getMessage().contains("인증 주체는 PrincipalDetails 인스턴스여야 하지만"));
     assertTrue(exception.getMessage().contains("String"));
   }
 
@@ -106,7 +106,7 @@ class SecurityUtilsTest {
         () -> SecurityUtils.getUserFromAuthentication(null)
     );
 
-    assertEquals("Authentication must not be null", exception.getMessage());
+    assertEquals("인증 객체는 필수입니다", exception.getMessage());
   }
 
   @Test
@@ -121,7 +121,7 @@ class SecurityUtilsTest {
         () -> SecurityUtils.getUserFromAuthentication(authentication)
     );
 
-    assertEquals("Authentication principal must not be null", exception.getMessage());
+    assertEquals("인증 주체는 필수입니다", exception.getMessage());
   }
 
   @Test
@@ -138,7 +138,7 @@ class SecurityUtilsTest {
         () -> SecurityUtils.getUserFromAuthentication(authentication)
     );
 
-    assertTrue(exception.getMessage().contains("must be an instance of PrincipalDetails"));
+    assertTrue(exception.getMessage().contains("인증 주체는 PrincipalDetails 인스턴스여야 하지만"));
   }
 
   private UserMemberDTO createTestUser() {

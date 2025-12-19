@@ -13,6 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.Disabled;
+
 /**
  * 현재 사용자 정보 조회 통합 테스트
  * GET /auth/me 엔드포인트를 테스트합니다.
@@ -41,10 +43,8 @@ class GetCurrentUserIntegrationTest extends BaseIntegrationTest {
                         .header("Authorization", "Bearer " + validAccessToken))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("User info retrieved"))
-                .andExpect(jsonPath("$.data.email").value(testUser.getEmail()))
-                .andExpect(jsonPath("$.data.userId").value(testUser.getUserId()));
+                .andExpect(jsonPath("$.email").value(testUser.getEmail()))
+                .andExpect(jsonPath("$.userId").value(testUser.getUserId()));
     }
 
     @Test
@@ -55,7 +55,13 @@ class GetCurrentUserIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get(UriConstant.AUTH + "/me"))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Authentication must not be null"));
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("INVALID_FORMAT"))
+                .andExpect(jsonPath("$.detail").value("인증 객체는 필수입니다"))
+                .andExpect(jsonPath("$.type").exists())
+                .andExpect(jsonPath("$.code").value("VAL_002"))
+                .andExpect(jsonPath("$.traceId").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
@@ -69,6 +75,13 @@ class GetCurrentUserIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get(UriConstant.AUTH + "/me")
                         .header("Authorization", "Bearer " + invalidToken))
                 .andDo(print())
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("INVALID_FORMAT"))
+                .andExpect(jsonPath("$.detail").value("인증 객체는 필수입니다"))
+                .andExpect(jsonPath("$.type").exists())
+                .andExpect(jsonPath("$.code").value("VAL_002"))
+                .andExpect(jsonPath("$.traceId").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }

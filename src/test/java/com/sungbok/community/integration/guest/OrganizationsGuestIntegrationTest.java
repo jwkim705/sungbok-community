@@ -26,9 +26,7 @@ class OrganizationsGuestIntegrationTest extends BaseIntegrationTest {
                         .header("X-Org-Id", orgId))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("공개 조직 목록 조회 성공"))
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test
@@ -42,9 +40,7 @@ class OrganizationsGuestIntegrationTest extends BaseIntegrationTest {
                         .header("X-Org-Id", orgId))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("조직 조회 성공"))
-                .andExpect(jsonPath("$.data.orgId").value(orgId));
+                .andExpect(jsonPath("$.orgId").value(orgId));
     }
 
     @Test
@@ -55,8 +51,7 @@ class OrganizationsGuestIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/organizations"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("공개 조직 목록 조회 성공"));
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test
@@ -70,6 +65,12 @@ class OrganizationsGuestIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/organizations/" + nonExistentOrgId)
                         .header("X-Org-Id", orgId))
                 .andDo(print())
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.type").exists())
+                .andExpect(jsonPath("$.code").exists())
+                .andExpect(jsonPath("$.traceId").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }

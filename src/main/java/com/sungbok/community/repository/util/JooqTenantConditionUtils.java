@@ -13,7 +13,7 @@ import org.jooq.Field;
 public class JooqTenantConditionUtils {
 
     private JooqTenantConditionUtils() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+        throw new UnsupportedOperationException("유틸리티 클래스는 인스턴스화할 수 없습니다");
     }
 
     /**
@@ -38,7 +38,7 @@ public class JooqTenantConditionUtils {
      */
     public static Condition orgIdCondition(Field<Long> orgIdField, Long orgId) {
         if (orgId == null || orgId <= 0) {
-            throw new IllegalArgumentException("orgId must be positive");
+            throw new IllegalArgumentException("조직 ID는 양수여야 합니다");
         }
         return orgIdField.eq(orgId);
     }

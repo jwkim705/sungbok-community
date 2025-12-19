@@ -1,6 +1,5 @@
 package com.sungbok.community.controller;
 
-import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.repository.CommentsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +31,9 @@ public class CommentsController {
      * @return 댓글 리스트
      */
     @GetMapping
-    public ResponseEntity<OkResponseDTO> getCommentsByPostId(
+    public ResponseEntity<List<Comments>> getCommentsByPostId(
             @PathVariable Long postId) {
         List<Comments> comments = commentsRepository.fetchByPostId(postId);
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "댓글 목록 조회 성공", comments)
-        );
+        return ResponseEntity.ok(comments);
     }
 }

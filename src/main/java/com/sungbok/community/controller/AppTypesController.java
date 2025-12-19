@@ -1,6 +1,5 @@
 package com.sungbok.community.controller;
 
-import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.repository.AppTypesRepository;
 import com.sungbok.community.repository.OrganizationsRepository;
 import lombok.RequiredArgsConstructor;
@@ -34,11 +33,9 @@ public class AppTypesController {
      * @return 앱 타입 리스트
      */
     @GetMapping
-    public ResponseEntity<OkResponseDTO> getAllAppTypes() {
+    public ResponseEntity<List<AppTypes>> getAllAppTypes() {
         List<AppTypes> appTypes = appTypesRepository.fetchAllActive();
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "앱 타입 목록 조회 성공", appTypes)
-        );
+        return ResponseEntity.ok(appTypes);
     }
 
     /**
@@ -49,11 +46,9 @@ public class AppTypesController {
      * @return 공개 조직 리스트
      */
     @GetMapping("/{appTypeId}/organizations")
-    public ResponseEntity<OkResponseDTO> getOrganizationsByAppType(
+    public ResponseEntity<List<Organizations>> getOrganizationsByAppType(
             @PathVariable Long appTypeId) {
         List<Organizations> orgs = organizationsRepository.fetchByAppType(appTypeId);
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "조직 목록 조회 성공", orgs)
-        );
+        return ResponseEntity.ok(orgs);
     }
 }

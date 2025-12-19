@@ -60,6 +60,25 @@ public class JwtTokenProvider {
      * @return JWT Access Token
      */
     public String generateAccessToken(UserMemberDTO user) {
+        // 기본 필드 검증
+        if (user == null || user.getEmail() == null || user.getUserId() == null) {
+            throw new IllegalArgumentException("사용자 정보, 이메일, 사용자 ID는 필수입니다");
+        }
+
+        // Guest JWT (OAuth 초기 로그인): orgId=null 허용
+        // Form Login: orgId, appTypeId, roleIds 필수
+        boolean isGuestUser = user.getOrgId() == null;
+
+        if (!isGuestUser) {
+            // Form Login 사용자는 필수 필드 검증
+            if (user.getAppTypeId() == null) {
+                throw new IllegalArgumentException("인증된 사용자는 앱 타입 ID가 필수입니다");
+            }
+            if (user.getRoleIds() == null) {
+                throw new IllegalArgumentException("인증된 사용자는 역할 ID가 필수입니다");
+            }
+        }
+
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getAccessTokenExpiration());
 

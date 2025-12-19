@@ -1,5 +1,6 @@
 package com.sungbok.community.repository;
 
+import org.jooq.generated.enums.OrganizationStatus;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.generated.tables.daos.OrganizationsDao;
@@ -47,7 +48,7 @@ public class OrganizationsRepository {
     public Optional<Organizations> fetchByOrgKey(String orgKey) {
         return dsl.selectFrom(ORGANIZATIONS)
                 .where(ORGANIZATIONS.ORG_KEY.eq(orgKey))
-                .and(ORGANIZATIONS.STATUS.eq("ACTIVE"))
+                .and(ORGANIZATIONS.STATUS.eq(OrganizationStatus.ACTIVE))
                 .fetchOptionalInto(Organizations.class);
     }
 
@@ -59,7 +60,7 @@ public class OrganizationsRepository {
     public List<Organizations> fetchAllPublic() {
         return dsl.selectFrom(ORGANIZATIONS)
                 .where(ORGANIZATIONS.IS_PUBLIC.eq(true))
-                .and(ORGANIZATIONS.STATUS.eq("ACTIVE"))
+                .and(ORGANIZATIONS.STATUS.eq(OrganizationStatus.ACTIVE))
                 .fetchInto(Organizations.class);
     }
 
@@ -73,7 +74,7 @@ public class OrganizationsRepository {
         return dsl.selectFrom(ORGANIZATIONS)
                 .where(ORGANIZATIONS.APP_TYPE_ID.eq(appTypeId))
                 .and(ORGANIZATIONS.IS_PUBLIC.eq(true))
-                .and(ORGANIZATIONS.STATUS.eq("ACTIVE"))
+                .and(ORGANIZATIONS.STATUS.eq(OrganizationStatus.ACTIVE))
                 .fetchInto(Organizations.class);
     }
 

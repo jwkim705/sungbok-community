@@ -3,6 +3,7 @@ package com.sungbok.community.security.config;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 import com.sungbok.community.config.CorsConfig;
+import com.sungbok.community.security.filter.RateLimitFilter;
 import com.sungbok.community.security.handler.CustomAccessDeniedHandler;
 import com.sungbok.community.security.handler.CustomAuthenticationFailHandler;
 import com.sungbok.community.security.handler.CustomAuthenticationSuccessHandler;
@@ -44,6 +45,7 @@ public class WebSecurityConfig {
     private final AuthProvider authProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final AuthenticationConfiguration authenticationConfiguration;
     private final CustomAuthenticationProvider customAuthenticationProvider;
@@ -63,6 +65,11 @@ public class WebSecurityConfig {
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
+                )
+                // Rate Limiting 필터 (JWT 필터 이후 실행)
+                .addFilterAfter(
+                        rateLimitFilter,
+                        JwtAuthenticationFilter.class
                 )
                 .authorizeHttpRequests(authorize -> {
                         // 공개 접근 엔드포인트

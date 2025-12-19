@@ -16,7 +16,7 @@ public class TenantContext {
 
     /** 유틸리티 클래스는 인스턴스화 불가 */
     private TenantContext() {
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+        throw new UnsupportedOperationException("유틸리티 클래스는 인스턴스화할 수 없습니다");
     }
 
     /**
@@ -27,7 +27,7 @@ public class TenantContext {
      */
     public static void setOrgId(Long orgId) {
         if (orgId == null || orgId <= 0) {
-            throw new IllegalArgumentException("orgId must be positive");
+            throw new IllegalArgumentException("조직 ID는 양수여야 합니다");
         }
         currentOrgId.set(orgId);
     }
@@ -52,7 +52,7 @@ public class TenantContext {
         Long orgId = currentOrgId.get();
         if (orgId == null) {
             throw new IllegalStateException(
-                "Tenant context not initialized. Ensure JWT filter has set orgId."
+                "테넌트 컨텍스트가 초기화되지 않았습니다. JWT 필터에서 orgId를 설정했는지 확인하세요."
             );
         }
         return orgId;

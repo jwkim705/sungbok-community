@@ -1,6 +1,5 @@
 package com.sungbok.community.enums;
 
-import com.sungbok.community.common.exception.DataNotFoundException;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -21,7 +20,7 @@ public enum SocialType {
         return Arrays.stream(values())
                 .filter(v -> v.code.equalsIgnoreCase(code))
                 .findFirst()
-                .orElseThrow(() -> new DataNotFoundException(String.format("No matching constant for [%s]", code)));
+                .orElseThrow(() -> new IllegalArgumentException(String.format("지원하지 않는 OAuth 제공자: %s", code)));
     }
 
     /**

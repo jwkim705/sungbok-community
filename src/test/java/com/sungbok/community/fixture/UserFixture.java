@@ -6,6 +6,7 @@ import com.sungbok.community.repository.MembershipRolesRepository;
 import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.security.TenantContext;
 import com.sungbok.community.support.TestDataManager;
+import org.jooq.generated.enums.MembershipStatus;
 import org.jooq.generated.tables.pojos.Memberships;
 import org.jooq.generated.tables.pojos.Users;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +32,7 @@ public class UserFixture {
     private String password = "Password123!";
     private String name = "테스트 사용자";
     private List<Long> roleIds = List.of();  // 빈 리스트 = 기본 역할 사용
-    private String status = "APPROVED";
+    private MembershipStatus status = MembershipStatus.APPROVED;
 
     /**
      * 빌더 시작
@@ -92,7 +93,7 @@ public class UserFixture {
      * @param status 상태 (예: APPROVED, PENDING)
      * @return this
      */
-    public UserFixture status(String status) {
+    public UserFixture status(MembershipStatus status) {
         this.status = status;
         return this;
     }

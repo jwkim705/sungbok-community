@@ -39,13 +39,13 @@ public class PageRequestVO implements Serializable {
           size = 10;
       }
       if (size > 100) {
-          throw new IllegalArgumentException("Page size must not be greater than 100!");
+          throw new IllegalArgumentException("페이지 크기는 100을 초과할 수 없습니다");
       }
       if (!StringUtils.hasText(sort)) {
-          throw new IllegalArgumentException("Sort must not be null!");
+          throw new IllegalArgumentException("정렬 필드는 필수입니다");
       }
       if (!StringUtils.hasText(direction)) {
-          throw new IllegalArgumentException("Direction must not be null!");
+          throw new IllegalArgumentException("정렬 방향은 필수입니다");
       }
   }
 

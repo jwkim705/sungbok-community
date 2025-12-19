@@ -5,7 +5,6 @@ import com.sungbok.community.repository.MembersRepository;
 import com.sungbok.community.repository.UserRepository;
 import com.sungbok.community.service.get.GetUserService;
 import lombok.RequiredArgsConstructor;
-import org.jooq.generated.tables.pojos.Users;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,12 +24,9 @@ public class GetUserServiceImpl implements GetUserService {
 
     @Override
     public UserMemberDTO getUser(String email) {
-        Users user = userRepository.fetchByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
-
-        // Use the JOIN method from UserRepository to get the DTO
-        return userRepository.fetchUserWithDetailsById(user.getId())
-             .orElseThrow(() -> new RuntimeException("User or Member details not found for ID: " + user.getId() + " after finding user by email."));
+        // 최적화: 2개 쿼리(fetchByEmail + fetchUserWithDetailsById)를 1개로 통합
+        return userRepository.fetchUserWithDetailsByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User or Member details not found for email: " + email));
     }
 
 }

@@ -1,13 +1,11 @@
 package com.sungbok.community.security.provider;
 
-import com.sungbok.community.common.exception.NotMatchPwdException;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -22,7 +20,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
   private final BCryptPasswordEncoder passwordEncoder;
 
   @Override
-  public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+  public Authentication authenticate(Authentication authentication) {
     String username = authentication.getName();
     String password = Objects.requireNonNull(authentication.getCredentials()).toString();
 
@@ -31,7 +29,7 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
     if (passwordEncoder.matches(password, userDetails.getPassword())) {
       return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
     } else {
-      throw new NotMatchPwdException(HttpStatus.UNAUTHORIZED, "암호가 일치하지 않습니다.");
+      throw new BadCredentialsException("이메일 또는 비밀번호가 일치하지 않습니다");
     }
   }
 

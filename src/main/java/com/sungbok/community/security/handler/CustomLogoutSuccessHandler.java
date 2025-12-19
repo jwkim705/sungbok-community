@@ -1,6 +1,5 @@
 package com.sungbok.community.security.handler;
 
-import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.util.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,15 +27,11 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
     UserMemberDTO userMember = SecurityUtils.getUserFromAuthentication(authentication);
     log.info("Success logout User: {}", objectMapper.writeValueAsString(userMember));
 
-    OkResponseDTO responseDTO = OkResponseDTO.of(
-        HttpStatus.OK.value(),
-        "Logout successful. Use POST /auth/logout to invalidate JWT tokens.",
-        userMember
-    );
     if (response != null) {
+      response.setStatus(HttpStatus.OK.value());
       response.setCharacterEncoding("UTF-8");
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-      objectMapper.writeValue(response.getWriter(), responseDTO);
+      objectMapper.writeValue(response.getWriter(), userMember);
     }
   }
 }

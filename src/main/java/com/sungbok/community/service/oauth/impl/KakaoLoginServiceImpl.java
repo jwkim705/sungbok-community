@@ -1,5 +1,7 @@
 package com.sungbok.community.service.oauth.impl;
 
+import com.sungbok.community.common.exception.OAuthException;
+import com.sungbok.community.common.exception.code.OAuthErrorCode;
 import com.sungbok.community.dto.SocialUserInfo;
 import com.sungbok.community.dto.oauth.KakaoTokenResponse;
 import com.sungbok.community.dto.oauth.KakaoUserInfoResponse;
@@ -13,6 +15,8 @@ import org.springframework.resilience.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -67,9 +71,22 @@ public class KakaoLoginServiceImpl implements SocialLoginService {
 
             log.info("Kakao 토큰 교환 성공");
             return response.getAccessToken();
+        } catch (HttpClientErrorException e) {
+            // 4xx 에러: 잘못된 요청 (invalid code, expired code 등)
+            log.error("Kakao 토큰 교환 실패 (클라이언트 에러): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new OAuthException(OAuthErrorCode.INVALID_CODE, e);
+        } catch (HttpServerErrorException e) {
+            // 5xx 에러: Kakao 서버 에러
+            log.error("Kakao 토큰 교환 실패 (서버 에러): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new OAuthException(OAuthErrorCode.PROVIDER_ERROR, e);
+        } catch (RestClientException e) {
+            // 네트워크 에러 또는 기타 RestClient 에러 (ResourceAccessException 포함)
+            log.error("Kakao 토큰 교환 실패 (네트워크 에러)", e);
+            throw new OAuthException(OAuthErrorCode.PROVIDER_ERROR, e);
         } catch (Exception e) {
-            log.error("Kakao 토큰 교환 실패", e);
-            throw new RuntimeException("Failed to exchange Kakao authorization code", e);
+            // 예상치 못한 에러
+            log.error("Kakao 토큰 교환 실패 (예상치 못한 에러)", e);
+            throw new OAuthException(OAuthErrorCode.PROVIDER_ERROR, e);
         }
     }
 
@@ -106,9 +123,22 @@ public class KakaoLoginServiceImpl implements SocialLoginService {
                 .name(name)
                 .picture(picture)
                 .build();
+        } catch (HttpClientErrorException e) {
+            // 4xx 에러: 잘못된 Access Token (만료, 권한 부족 등)
+            log.error("Kakao 사용자 정보 조회 실패 (클라이언트 에러): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new OAuthException(OAuthErrorCode.INVALID_CODE, e);
+        } catch (HttpServerErrorException e) {
+            // 5xx 에러: Kakao 서버 에러
+            log.error("Kakao 사용자 정보 조회 실패 (서버 에러): status={}, body={}", e.getStatusCode(), e.getResponseBodyAsString(), e);
+            throw new OAuthException(OAuthErrorCode.PROVIDER_ERROR, e);
+        } catch (RestClientException e) {
+            // 네트워크 에러 또는 기타 RestClient 에러 (ResourceAccessException 포함)
+            log.error("Kakao 사용자 정보 조회 실패 (네트워크 에러)", e);
+            throw new OAuthException(OAuthErrorCode.PROVIDER_ERROR, e);
         } catch (Exception e) {
-            log.error("Kakao 사용자 정보 조회 실패", e);
-            throw new RuntimeException("Failed to get Kakao user info", e);
+            // 예상치 못한 에러
+            log.error("Kakao 사용자 정보 조회 실패 (예상치 못한 에러)", e);
+            throw new OAuthException(OAuthErrorCode.PROVIDER_ERROR, e);
         }
     }
 }

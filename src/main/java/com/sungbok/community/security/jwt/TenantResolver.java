@@ -1,10 +1,13 @@
 package com.sungbok.community.security.jwt;
 
-import com.sungbok.community.common.exception.BadRequestException;
+import com.sungbok.community.common.exception.ResourceNotFoundException;
+import com.sungbok.community.common.exception.ValidationException;
+import com.sungbok.community.common.exception.code.TenantErrorCode;
+import com.sungbok.community.common.exception.code.ValidationErrorCode;
 import com.sungbok.community.repository.OrganizationsRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 import org.jooq.generated.tables.pojos.Organizations;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,16 +35,17 @@ public class TenantResolver {
      *
      * @param request HTTP 요청
      * @return 검증된 org_id
-     * @throws BadRequestException X-Org-Id 헤더가 없거나, 형식이 잘못되었거나, 조직이 존재하지 않거나 비공개인 경우
+     * @throws ValidationException X-Org-Id 헤더가 없거나 형식이 잘못된 경우
+     * @throws ResourceNotFoundException 조직이 존재하지 않거나 비공개인 경우
      */
     public Long resolveOrgId(HttpServletRequest request) {
         String headerOrgId = request.getHeader(ORG_ID_HEADER);
 
         // 1. X-Org-Id 헤더 필수 검증
         if (headerOrgId == null || headerOrgId.isBlank()) {
-            throw new BadRequestException(
-                HttpStatus.BAD_REQUEST,
-                "Guest 접근을 위해 X-Org-Id 헤더가 필요합니다"
+            throw new ValidationException(
+                ValidationErrorCode.FAILED,
+                Map.of("X-Org-Id", "Guest 접근을 위해 X-Org-Id 헤더가 필요합니다")
             );
         }
 
@@ -50,9 +54,9 @@ public class TenantResolver {
         try {
             orgId = Long.parseLong(headerOrgId);
         } catch (NumberFormatException e) {
-            throw new BadRequestException(
-                HttpStatus.BAD_REQUEST,
-                "X-Org-Id는 유효한 숫자여야 합니다"
+            throw new ValidationException(
+                ValidationErrorCode.INVALID_FORMAT,
+                Map.of("X-Org-Id", "유효한 숫자여야 합니다")
             );
         }
 
@@ -60,9 +64,9 @@ public class TenantResolver {
         return organizationsRepository.fetchById(orgId)
                 .filter(Organizations::getIsPublic)
                 .map(Organizations::getOrgId)
-                .orElseThrow(() -> new BadRequestException(
-                    HttpStatus.BAD_REQUEST,
-                    String.format("조직을 찾을 수 없거나 공개되지 않은 조직입니다: %d", orgId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    TenantErrorCode.NOT_FOUND,
+                    Map.of("orgId", orgId)
                 ));
     }
 }

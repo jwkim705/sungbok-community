@@ -34,22 +34,23 @@ class FormLoginIntegrationTest extends BaseIntegrationTest {
                 .name("Form 로그인 사용자")
                 .build(userRepository, membersRepository, membershipRolesRepository, passwordEncoder);
 
+        Long testOrgId = testDataManager.getTestOrgId();
+
         // When: 유효한 자격 증명으로 로그인
         MvcResult result = mockMvc.perform(post("/login")
+                        .header("X-Org-Id", testOrgId)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("email", email)
                         .param("password", TEST_PASSWORD))
                 .andDo(print())
                 // Then: 로그인 성공 응답 검증
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("Login successful"))
-                .andExpect(jsonPath("$.data.user.email").value(email))
-                .andExpect(jsonPath("$.data.user.userId").value(user.getUserId()))
-                .andExpect(jsonPath("$.data.tokens.accessToken").exists())
-                .andExpect(jsonPath("$.data.tokens.refreshToken").exists())
-                .andExpect(jsonPath("$.data.tokens.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.data.tokens.expiresIn").value(900))
+                .andExpect(jsonPath("$.user.email").value(email))
+                .andExpect(jsonPath("$.user.userId").value(user.getUserId()))
+                .andExpect(jsonPath("$.tokens.accessToken").exists())
+                .andExpect(jsonPath("$.tokens.refreshToken").exists())
+                .andExpect(jsonPath("$.tokens.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.tokens.expiresIn").value(900))
                 .andReturn();
 
         // TokenTestHelper로 토큰 추출 (중복 제거)
@@ -72,25 +73,43 @@ class FormLoginIntegrationTest extends BaseIntegrationTest {
                 .email(email)
                 .build(userRepository, membersRepository, membershipRolesRepository, passwordEncoder);
 
+        Long testOrgId = testDataManager.getTestOrgId();
+
         // When & Then: 잘못된 비밀번호로 로그인 시도
         mockMvc.perform(post("/login")
+                        .header("X-Org-Id", testOrgId)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("email", email)
                         .param("password", "WrongPassword123!"))
                 .andDo(print())
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.type").exists())
+                .andExpect(jsonPath("$.code").exists())
+                .andExpect(jsonPath("$.traceId").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
     @DisplayName("Form 로그인 - 존재하지 않는 이메일 - 401 응답")
     void testFormLogin_WithNonExistentEmail_ShouldReturn401() throws Exception {
+        Long testOrgId = testDataManager.getTestOrgId();
+
         // When & Then: 존재하지 않는 이메일로 로그인 시도
         mockMvc.perform(post("/login")
+                        .header("X-Org-Id", testOrgId)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("email", "nonexistent@test.com")
                         .param("password", TEST_PASSWORD))
                 .andDo(print())
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").exists())
+                .andExpect(jsonPath("$.type").exists())
+                .andExpect(jsonPath("$.code").exists())
+                .andExpect(jsonPath("$.traceId").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test
@@ -102,8 +121,11 @@ class FormLoginIntegrationTest extends BaseIntegrationTest {
                 .email(email)
                 .build(userRepository, membersRepository, membershipRolesRepository, passwordEncoder);
 
+        Long testOrgId = testDataManager.getTestOrgId();
+
         // When: 로그인
         MvcResult result = mockMvc.perform(post("/login")
+                        .header("X-Org-Id", testOrgId)
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("email", email)
                         .param("password", TEST_PASSWORD))

@@ -49,7 +49,7 @@ public class TokenTestHelper {
     public String extractAccessToken(MvcResult result) throws Exception {
         String responseBody = result.getResponse().getContentAsString();
         JsonNode root = objectMapper.readTree(responseBody);
-        return root.path("data").path("accessToken").asText();
+        return root.get("accessToken").asString();
     }
 
     /**
@@ -62,11 +62,11 @@ public class TokenTestHelper {
     public String extractRefreshToken(MvcResult result) throws Exception {
         String responseBody = result.getResponse().getContentAsString();
         JsonNode root = objectMapper.readTree(responseBody);
-        return root.path("data").path("refreshToken").asText();
+        return root.get("refreshToken").asString();
     }
 
     /**
-     * Form Login 응답에서 토큰 추출 (경로가 다름)
+     * Form Login 응답에서 토큰 추출
      *
      * @param result MockMvc 실행 결과
      * @return TokenPair (Access Token, Refresh Token)
@@ -75,8 +75,8 @@ public class TokenTestHelper {
     public TokenPair extractTokensFromFormLogin(MvcResult result) throws Exception {
         String responseBody = result.getResponse().getContentAsString();
         JsonNode root = objectMapper.readTree(responseBody);
-        String accessToken = root.path("data").path("tokens").path("accessToken").asText();
-        String refreshToken = root.path("data").path("tokens").path("refreshToken").asText();
+        String accessToken = root.get("tokens").get("accessToken").asString();
+        String refreshToken = root.get("tokens").get("refreshToken").asString();
         return new TokenPair(accessToken, refreshToken);
     }
 

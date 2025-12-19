@@ -1,6 +1,7 @@
 package com.sungbok.community.controller;
 
-import com.sungbok.community.common.dto.OkResponseDTO;
+import com.sungbok.community.common.exception.ValidationException;
+import com.sungbok.community.common.exception.code.ValidationErrorCode;
 import com.sungbok.community.dto.UserMemberDTO;
 import com.sungbok.community.service.change.MembershipService;
 import com.sungbok.community.util.SecurityUtils;
@@ -38,7 +39,7 @@ public class MembershipsController {
      * @return 생성된 멤버십
      */
     @PostMapping("/organizations/{orgId}/join")
-    public ResponseEntity<OkResponseDTO> joinOrganization(
+    public ResponseEntity<Memberships> joinOrganization(
             @PathVariable Long orgId,
             Authentication authentication) {
 
@@ -46,9 +47,8 @@ public class MembershipsController {
 
         // Guest JWT 검증 (orgId가 null이어야 함)
         if (user.getOrgId() != null) {
-            return ResponseEntity.badRequest().body(
-                OkResponseDTO.of(400, "이미 조직에 속한 사용자입니다.", null)
-            );
+            throw new ValidationException(ValidationErrorCode.FAILED,
+                Map.of("error", "이미 조직에 속한 사용자입니다."));
         }
 
         Memberships membership = membershipService.requestJoin(
@@ -57,9 +57,7 @@ public class MembershipsController {
             user.getName()
         );
 
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "가입 요청이 완료되었습니다. 관리자 승인을 기다려주세요.", membership)
-        );
+        return ResponseEntity.ok(membership);
     }
 
     /**
@@ -72,16 +70,14 @@ public class MembershipsController {
      */
     @PutMapping("/memberships/{membershipId}/approve")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, 'users', 'update')")
-    public ResponseEntity<OkResponseDTO> approveMembership(
+    public ResponseEntity<Void> approveMembership(
             @PathVariable Long membershipId,
             Authentication authentication) {
 
         UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         membershipService.approveMembership(membershipId, user.getUserId());
 
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "멤버십이 승인되었습니다.", null)
-        );
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -94,16 +90,14 @@ public class MembershipsController {
      */
     @PutMapping("/memberships/{membershipId}/reject")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, 'users', 'update')")
-    public ResponseEntity<OkResponseDTO> rejectMembership(
+    public ResponseEntity<Void> rejectMembership(
             @PathVariable Long membershipId,
             Authentication authentication) {
 
         UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         membershipService.rejectMembership(membershipId, user.getUserId());
 
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "멤버십이 거절되었습니다.", null)
-        );
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -117,7 +111,7 @@ public class MembershipsController {
      */
     @PostMapping("/memberships/{membershipId}/roles")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, 'roles', 'update')")
-    public ResponseEntity<OkResponseDTO> addMembershipRole(
+    public ResponseEntity<Void> addMembershipRole(
             @PathVariable Long membershipId,
             @RequestBody Map<String, Object> request,
             Authentication authentication) {
@@ -129,9 +123,8 @@ public class MembershipsController {
             : null;
 
         if (roleId == null) {
-            return ResponseEntity.badRequest().body(
-                OkResponseDTO.of(400, "roleId는 필수입니다.", null)
-            );
+            throw new ValidationException(ValidationErrorCode.FAILED,
+                Map.of("roleId", "roleId는 필수입니다."));
         }
 
         boolean isPrimary = request.get("isPrimary") != null
@@ -140,9 +133,7 @@ public class MembershipsController {
 
         membershipService.addMembershipRole(membershipId, roleId, isPrimary, user.getUserId());
 
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "역할이 추가되었습니다.", null)
-        );
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -156,7 +147,7 @@ public class MembershipsController {
      */
     @DeleteMapping("/memberships/{membershipId}/roles/{roleId}")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, 'roles', 'update')")
-    public ResponseEntity<OkResponseDTO> removeMembershipRole(
+    public ResponseEntity<Void> removeMembershipRole(
             @PathVariable Long membershipId,
             @PathVariable Long roleId,
             Authentication authentication) {
@@ -164,9 +155,7 @@ public class MembershipsController {
         UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         membershipService.removeMembershipRole(membershipId, roleId, user.getUserId());
 
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "역할이 제거되었습니다.", null)
-        );
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -180,7 +169,7 @@ public class MembershipsController {
      */
     @PutMapping("/memberships/{membershipId}/roles/primary")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, 'roles', 'update')")
-    public ResponseEntity<OkResponseDTO> setPrimaryRole(
+    public ResponseEntity<Void> setPrimaryRole(
             @PathVariable Long membershipId,
             @RequestBody Map<String, Object> request,
             Authentication authentication) {
@@ -190,16 +179,13 @@ public class MembershipsController {
             : null;
 
         if (roleId == null) {
-            return ResponseEntity.badRequest().body(
-                OkResponseDTO.of(400, "roleId는 필수입니다.", null)
-            );
+            throw new ValidationException(ValidationErrorCode.FAILED,
+                Map.of("roleId", "roleId는 필수입니다."));
         }
 
         membershipService.setPrimaryRole(membershipId, roleId);
 
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "주 역할이 변경되었습니다.", null)
-        );
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -210,12 +196,10 @@ public class MembershipsController {
      */
     @GetMapping("/memberships/pending")
     @PreAuthorize("@permissionChecker.hasPermission(authentication, 'users', 'read')")
-    public ResponseEntity<OkResponseDTO> getPendingMemberships() {
+    public ResponseEntity<List<Memberships>> getPendingMemberships() {
         List<Memberships> memberships = membershipService.getPendingMemberships();
 
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "PENDING 멤버십 목록 조회 성공", memberships)
-        );
+        return ResponseEntity.ok(memberships);
     }
 
     /**
@@ -226,14 +210,12 @@ public class MembershipsController {
      * @return 멤버십 리스트
      */
     @GetMapping("/memberships/me")
-    public ResponseEntity<OkResponseDTO> getMyMemberships(
+    public ResponseEntity<List<Memberships>> getMyMemberships(
             Authentication authentication) {
 
         UserMemberDTO user = SecurityUtils.getUserFromAuthentication(authentication);
         List<Memberships> memberships = membershipService.getMyMemberships(user.getUserId());
 
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "내 멤버십 목록 조회 성공", memberships)
-        );
+        return ResponseEntity.ok(memberships);
     }
 }

@@ -5,6 +5,7 @@ import com.sungbok.community.repository.OrganizationsRepository;
 import com.sungbok.community.repository.RolesRepository;
 import com.sungbok.community.security.TenantContext;
 import org.jooq.DSLContext;
+import org.jooq.generated.enums.OrganizationStatus;
 import org.jooq.generated.tables.pojos.AppTypes;
 import org.jooq.generated.tables.pojos.Organizations;
 import org.slf4j.Logger;
@@ -141,7 +142,7 @@ public class TestDataManager {
                 newOrg.setOrgName("테스트 조직");
                 newOrg.setOrgKey("test-org");
                 newOrg.setIsPublic(true);
-                newOrg.setStatus("ACTIVE");
+                newOrg.setStatus(OrganizationStatus.ACTIVE);
                 newOrg.setCreatedAt(LocalDateTime.now());
                 newOrg.setCreatedBy(1L);
                 newOrg.setModifiedAt(LocalDateTime.now());

@@ -1,7 +1,8 @@
 package com.sungbok.community.service.change.impl;
 
-import com.sungbok.community.common.exception.AlreadyExistException;
-import com.sungbok.community.common.exception.DataNotFoundException;
+import com.sungbok.community.common.exception.ResourceNotFoundException;
+import com.sungbok.community.common.exception.code.ResourceErrorCode;
+import com.sungbok.community.common.exception.code.TenantErrorCode;
 import com.sungbok.community.dto.AddUserRequestDTO;
 import com.sungbok.community.dto.UpdateUserWithMember;
 import com.sungbok.community.dto.UserMemberDTO;
@@ -14,6 +15,7 @@ import com.sungbok.community.security.TenantContext;
 import com.sungbok.community.service.change.ChangeUserService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.jooq.generated.enums.MembershipStatus;
 import org.jooq.generated.tables.pojos.Memberships;
 import org.jooq.generated.tables.pojos.Organizations;
 import org.jooq.generated.tables.pojos.Roles;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +43,10 @@ public class ChangeUserServiceImpl implements ChangeUserService {
     public UserMemberDTO signup(AddUserRequestDTO dto) {
 
         if(userRepository.fetchUserWithDetailsByEmail(dto.getEmail()).isPresent()){
-            throw new AlreadyExistException("이미 가입한 회원입니다.");
+            throw new ResourceNotFoundException(
+                ResourceErrorCode.ALREADY_EXISTS,
+                Map.of("email", dto.getEmail())
+            );
         }
 
         // Users 엔티티 생성 및 저장
@@ -66,14 +72,15 @@ public class ChangeUserServiceImpl implements ChangeUserService {
                 ? dto.getRegisteredByUserId()
                 : savedUser.getId()
         );
-        membership.setStatus("APPROVED");
+        membership.setStatus(MembershipStatus.APPROVED);
         membership.setIsDeleted(false);
         Memberships savedMembership = membersRepository.insert(membership);
 
         // 기본 역할 할당 (level=1)
         Roles defaultRole = rolesRepository.fetchByOrgIdAndLevel(orgId, 1)
-                .orElseThrow(() -> new DataNotFoundException(
-                    String.format("조직 ID %d에 level=1 기본 역할이 없습니다", orgId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    ResourceErrorCode.NOT_FOUND,
+                    Map.of("orgId", orgId, "level", 1, "message", "기본 역할이 없습니다")
                 ));
 
         membershipRolesRepository.assignRole(
@@ -85,17 +92,18 @@ public class ChangeUserServiceImpl implements ChangeUserService {
 
         // appTypeId 가져오기
         Organizations org = organizationsRepository.fetchById(orgId)
-                .orElseThrow(() -> new DataNotFoundException(
-                    String.format("조직 ID %d를 찾을 수 없습니다", orgId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    TenantErrorCode.NOT_FOUND,
+                    Map.of("orgId", orgId)
                 ));
 
         // UserMemberDTO 반환
-        return UserMemberDTO.builder()
-                .user(savedUser)
-                .membership(savedMembership)
-                .roleIds(List.of(defaultRole.getId()))
-                .appTypeId(org.getAppTypeId())
-                .build();
+        return UserMemberDTO.of(
+                savedUser,
+                savedMembership,
+                List.of(defaultRole.getId()),
+                org.getAppTypeId()
+        );
     }
 
 
@@ -133,7 +141,7 @@ public class ChangeUserServiceImpl implements ChangeUserService {
 
         } else {
             if (updateReq.getEmail() == null) {
-                 throw new IllegalArgumentException("Email is required for new users.");
+                 throw new IllegalArgumentException("신규 사용자는 이메일이 필수입니다");
             }
 
             Users newUser = new Users();
@@ -155,14 +163,15 @@ public class ChangeUserServiceImpl implements ChangeUserService {
             newMembership.setUserId(finalUserId);
             newMembership.setName(updateReq.getName());
             newMembership.setPicture(updateReq.getPicture());
-            newMembership.setStatus("APPROVED");
+            newMembership.setStatus(MembershipStatus.APPROVED);
             newMembership.setIsDeleted(false);
             Memberships savedMembership = membersRepository.insert(newMembership);
 
             // 기본 역할 할당 (level=1)
             Roles defaultRole = rolesRepository.fetchByOrgIdAndLevel(orgId, 1)
-                    .orElseThrow(() -> new DataNotFoundException(
-                        String.format("조직 ID %d에 level=1 기본 역할이 없습니다", orgId)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                        ResourceErrorCode.NOT_FOUND,
+                        Map.of("orgId", orgId, "level", 1, "message", "기본 역할이 없습니다")
                     ));
 
             membershipRolesRepository.assignRole(

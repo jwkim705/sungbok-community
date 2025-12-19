@@ -26,9 +26,7 @@ class AppTypesGuestIntegrationTest extends BaseIntegrationTest {
                         .header("X-Org-Id", orgId))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("앱 타입 목록 조회 성공"))
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test
@@ -43,9 +41,7 @@ class AppTypesGuestIntegrationTest extends BaseIntegrationTest {
                         .header("X-Org-Id", orgId))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("조직 목록 조회 성공"))
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$").isArray());
     }
 
     @Test
@@ -56,7 +52,6 @@ class AppTypesGuestIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/app-types"))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andExpect(jsonPath("$.message").value("앱 타입 목록 조회 성공"));
+                .andExpect(jsonPath("$").isArray());
     }
 }

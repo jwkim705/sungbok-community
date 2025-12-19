@@ -1,6 +1,5 @@
 package com.sungbok.community.controller;
 
-import com.sungbok.community.common.dto.OkResponseDTO;
 import com.sungbok.community.repository.RolesRepository;
 import com.sungbok.community.security.TenantContext;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +17,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/roles")
+@RequestMapping("/roles")
 public class RoleController {
 
     private final RolesRepository rolesRepository;
@@ -29,11 +28,9 @@ public class RoleController {
      * @return 역할 목록 (level, name 순 정렬)
      */
     @GetMapping
-    public ResponseEntity<OkResponseDTO> getRoles() {
+    public ResponseEntity<List<Roles>> getRoles() {
         Long orgId = TenantContext.getRequiredOrgId();
         List<Roles> roles = rolesRepository.fetchAllByOrgId(orgId);
-        return ResponseEntity.ok(
-            OkResponseDTO.of(200, "Roles retrieved", roles)
-        );
+        return ResponseEntity.ok(roles);
     }
 }

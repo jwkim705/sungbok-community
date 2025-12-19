@@ -5,6 +5,17 @@ services:
     environment:
       - TZ=Asia/Seoul
       - SPRING_PROFILES_ACTIVE=prod
+      # OCI S3 환경 변수
+      - OCI_NAMESPACE=${OCI_NAMESPACE}
+      - OCI_BUCKET_NAME=${OCI_BUCKET_NAME}
+      - OCI_REGION=${OCI_REGION}
+      - OCI_ACCESS_KEY=${OCI_ACCESS_KEY}
+      - OCI_SECRET_KEY=${OCI_SECRET_KEY}
+      - CDN_ENABLED=${CDN_ENABLED}
+      - CDN_DOMAIN=${CDN_DOMAIN}
+      # FFmpeg 환경 변수
+      - FFMPEG_PATH=${FFMPEG_PATH}
+      - FFPROBE_PATH=${FFPROBE_PATH}
     ports:
       - "8112:8080"
     networks:
